@@ -576,15 +576,47 @@
 
         // Inicializar Google Sign-in
         function initializeGoogleSignIn() {
-            // Obtener configuración desde archivo externo
+            // Obtener configuración desde archivo externo o variables de entorno
             const config = getGoogleConfig();
             
-            google.accounts.id.initialize({
-                client_id: config.CLIENT_ID,
-                callback: handleCredentialResponse,
-                auto_select: config.AUTO_SELECT,
-                cancel_on_tap_outside: config.CANCEL_ON_TAP_OUTSIDE
-            });
+            // Verificar si estamos en GitHub Pages y usar variables de entorno
+            if (window.location.hostname === 'ojaramil.github.io') {
+                // En GitHub Pages, usar variables de entorno o configuración hardcodeada
+                const githubConfig = {
+                    CLIENT_ID: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
+                    AUTHORIZED_ORIGINS: [
+                        'https://aniversario.asperger.org',
+                        'https://ojaramil.github.io/asperger-10-anos-conmemorativo',
+                        'http://localhost:3000'
+                    ],
+                    AUTO_SELECT: false,
+                    CANCEL_ON_TAP_OUTSIDE: true,
+                    SHEETS: {
+                        SPREADSHEET_ID: '1S3mJLZff9lq_MEJxU3L2h4im0hNnEXcd-Dm_uw623PQ',
+                        RANGE: 'Sheet1!A:D',
+                        SCOPES: [
+                            'https://www.googleapis.com/auth/userinfo.email',
+                            'https://www.googleapis.com/auth/userinfo.profile',
+                            'https://www.googleapis.com/auth/spreadsheets'
+                        ]
+                    }
+                };
+                
+                google.accounts.id.initialize({
+                    client_id: githubConfig.CLIENT_ID,
+                    callback: handleCredentialResponse,
+                    auto_select: githubConfig.AUTO_SELECT,
+                    cancel_on_tap_outside: githubConfig.CANCEL_ON_TAP_OUTSIDE
+                });
+            } else {
+                // En desarrollo local, usar config.js
+                google.accounts.id.initialize({
+                    client_id: config.CLIENT_ID,
+                    callback: handleCredentialResponse,
+                    auto_select: config.AUTO_SELECT,
+                    cancel_on_tap_outside: config.CANCEL_ON_TAP_OUTSIDE
+                });
+            }
 
             // Renderizar el botón de Google
             google.accounts.id.renderButton(
@@ -652,7 +684,27 @@
 
         // Guardar usuario en Google Sheets
         function saveUserToSheets(user) {
-            const config = getGoogleConfig();
+            let config;
+            
+            // Obtener configuración según el entorno
+            if (window.location.hostname === 'ojaramil.github.io') {
+                // Configuración para GitHub Pages
+                config = {
+                    CLIENT_ID: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
+                    SHEETS: {
+                        SPREADSHEET_ID: '1S3mJLZff9lq_MEJxU3L2h4im0hNnEXcd-Dm_uw623PQ',
+                        RANGE: 'Sheet1!A:D',
+                        SCOPES: [
+                            'https://www.googleapis.com/auth/userinfo.email',
+                            'https://www.googleapis.com/auth/userinfo.profile',
+                            'https://www.googleapis.com/auth/spreadsheets'
+                        ]
+                    }
+                };
+            } else {
+                // Configuración para desarrollo local
+                config = getGoogleConfig();
+            }
             
             // Verificar si Google Sheets está configurado
             if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
