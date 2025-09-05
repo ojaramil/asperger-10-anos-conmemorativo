@@ -948,37 +948,18 @@
                 return;
             }
 
-            // Usar Google Sheets API con fetch
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.API_KEY}`;
+            // Por ahora, solo loguear los datos (API Key necesita permisos)
+            console.log('📊 Datos que se guardarían en Google Sheets:');
+            console.log('📅 Fecha:', rowData[0]);
+            console.log('👤 Nombre:', rowData[1]);
+            console.log('📧 Email:', rowData[2]);
+            console.log('🆔 ID:', rowData[3]);
+            console.log('📋 Spreadsheet ID:', config.SHEETS.SPREADSHEET_ID);
+            console.log('📍 Rango:', config.SHEETS.RANGE);
             
-            const requestBody = {
-                values: [rowData]
-            };
-
-            console.log('📤 Enviando datos a Google Sheets...');
-            console.log('URL:', url);
-            console.log('Datos:', requestBody);
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody)
-            })
-            .then(response => {
-                console.log('📥 Respuesta de Google Sheets:', response);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('✅ Usuario guardado exitosamente en Google Sheets:', data);
-            })
-            .catch(error => {
-                console.error('❌ Error al guardar en Google Sheets:', error);
-            });
+            // Simular éxito
+            console.log('✅ Simulación: Usuario guardado en Google Sheets');
+            console.log('ℹ️ Para guardar realmente, configura los permisos de la API Key');
         }
 
         // Función para probar Google Sheets
