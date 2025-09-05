@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
     <script src="config.js"></script>
     <style>
         * {
@@ -916,34 +917,44 @@
                 user.id                       // ID Usuario
             ];
 
-            // Verificar si gapi está disponible
-            if (typeof gapi === 'undefined') {
-                console.log('gapi no está disponible, saltando guardado en Google Sheets');
-                return;
+            console.log('Datos a guardar en Google Sheets:', rowData);
+
+            // Función para intentar guardar en Google Sheets
+            function trySaveToSheets() {
+                if (typeof gapi === 'undefined') {
+                    console.log('gapi aún no está disponible, reintentando en 1 segundo...');
+                    setTimeout(trySaveToSheets, 1000);
+                    return;
+                }
+
+                console.log('gapi disponible, inicializando Google Sheets...');
+                
+                gapi.load('client', () => {
+                    gapi.client.init({
+                        apiKey: config.CLIENT_ID,
+                        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                        clientId: config.CLIENT_ID,
+                        scope: config.SHEETS.SCOPES.join(' ')
+                    }).then(() => {
+                        console.log('Google Sheets API inicializada, guardando datos...');
+                        return gapi.client.sheets.spreadsheets.values.append({
+                            spreadsheetId: config.SHEETS.SPREADSHEET_ID,
+                            range: config.SHEETS.RANGE,
+                            valueInputOption: 'RAW',
+                            resource: {
+                                values: [rowData]
+                            }
+                        });
+                    }).then((response) => {
+                        console.log('✅ Usuario guardado exitosamente en Google Sheets:', response);
+                    }).catch((error) => {
+                        console.error('❌ Error al guardar en Google Sheets:', error);
+                    });
+                });
             }
 
-            // Usar Google Sheets API para escribir
-            gapi.load('client', () => {
-                gapi.client.init({
-                    apiKey: config.CLIENT_ID,
-                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-                    clientId: config.CLIENT_ID,
-                    scope: config.SHEETS.SCOPES.join(' ')
-                }).then(() => {
-                    return gapi.client.sheets.spreadsheets.values.append({
-                        spreadsheetId: config.SHEETS.SPREADSHEET_ID,
-                        range: config.SHEETS.RANGE,
-                        valueInputOption: 'RAW',
-                        resource: {
-                            values: [rowData]
-                        }
-                    });
-                }).then((response) => {
-                    console.log('Usuario guardado en Google Sheets:', response);
-                }).catch((error) => {
-                    console.error('Error al guardar en Google Sheets:', error);
-                });
-            });
+            // Iniciar el proceso de guardado
+            trySaveToSheets();
         }
 
         // Mostrar mensaje de bienvenida personalizado
