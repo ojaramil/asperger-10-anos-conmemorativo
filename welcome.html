@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido - 10 Años de Asperger para Asperger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2e86ab;
+            --secondary-color: #a23b72;
+            --accent-color: #f18f01;
+            --light-blue: #e8f4f8;
+            --light-purple: #f0e6ff;
+            --light-orange: #fff4e6;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+            --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.25);
+            --transition-fast: all 0.2s ease;
+            --transition-normal: all 0.3s ease;
+            --transition-slow: all 0.5s ease;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--light-blue) 0%, var(--light-purple) 50%, var(--light-orange) 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Partículas de fondo */
+        .particles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+            opacity: 0.6;
+        }
+
+        .particle:nth-child(odd) {
+            background: var(--secondary-color);
+            animation-duration: 8s;
+        }
+
+        .particle:nth-child(3n) {
+            background: var(--accent-color);
+            animation-duration: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+                opacity: 0.6;
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+                opacity: 1;
+            }
+        }
+
+        /* Contenedor principal */
+        .welcome-container {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        /* Logo y elementos visuales */
+        .logo-section {
+            margin-bottom: 3rem;
+            animation: slideInDown 1s ease-out;
+        }
+
+        .logo-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            box-shadow: var(--shadow-xl);
+            animation: pulse 2s ease-in-out infinite;
+            transition: var(--transition-normal);
+        }
+
+        .logo:hover {
+            transform: scale(1.1);
+            box-shadow: 0 20px 40px rgba(46, 134, 171, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .logo-glow {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+            border-radius: 50%;
+            z-index: -1;
+            animation: rotate 3s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Títulos */
+        .welcome-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            animation: slideInUp 1s ease-out 0.3s both;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .anniversary-text {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            animation: slideInUp 1s ease-out 0.6s both;
+            position: relative;
+        }
+
+        .anniversary-text::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-light);
+            margin-bottom: 3rem;
+            animation: slideInUp 1s ease-out 0.9s both;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        /* Contenedor de botones */
+        .buttons-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: slideInUp 1s ease-out 1.2s both;
+        }
+
+        /* Botón de Google Sign-in */
+        .google-signin-button {
+            background: var(--white);
+            color: var(--text-dark);
+            border: 2px solid #e0e0e0;
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: var(--transition-normal);
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            min-width: 280px;
+            justify-content: center;
+        }
+
+        .google-signin-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: #4285f4;
+        }
+
+        .google-signin-button:active {
+            transform: translateY(0);
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEwIDMuMTgxODJDMTAuOTU0NSAzLjE4MTgyIDExLjg2MzYgMy40OTU0NSAxMi41OTU1IDQuMDY4MThMMTUuNDU0NSAxLjIyNzI3QzEzLjkwOTEgLTAuNDA5MDkxIDEwLjA0NTUgLTAuNDA5MDkxIDguNSAxLjIyNzI3QzcuNDU0NTUgLTAuNDA5MDkxIDQuNTkwOTEgLTAuNDA5MDkxIDMuMDQ1NDUgMS4yMjcyN0w1LjkwNDU1IDQuMDY4MThDNi42MzYzNiAzLjQ5NTQ1IDcuNTQ1NDUgMy4xODE4MiA4LjUgMy4xODE4MkMxMC45NTQ1IDMuMTgxODIgMTMgNS4yMjcyNyAxMyA3LjY4MTgyQzEzIDEwLjEzNjQgMTAuOTU0NSAxMi4xODE4IDguNSAxMi4xODE4QzcuNDU0NTUgMTIuMTgxOCA2LjU0NTQ1IDExLjg2MzYgNS44MTM2NCAxMS4yOTA5TDIuOTU0NTUgMTQuMTMxOEM0LjUwOTA5IDE1Ljc2MzYgOC4zNzI3MyAxNS43NjM2IDkuOTE4MTggMTQuMTMxOEMxMS40NjM2IDEyLjUgMTEuNDYzNiA5LjU0NTQ1IDkuOTE4MTggNy45MDkwOUw3LjA1OTA5IDUuMDY4MThDNS40MDkwOSAzLjQ5NTQ1IDIuNTQ1NDUgMy40OTU0NSAwLjk5MDkwOSA1LjA2ODE4Qy0wLjU1NDU0NSA2LjY0MDkxIC0wLjU1NDU0NSAxMC4zNjM2IDAuOTkwOTA5IDExLjkzMThMMy44NSA4LjA5MDkxQzQuNTgxODIgOC42NjM2NCA1LjQ5MDkxIDguOTc3MjcgNi40NTQ1NSA4Ljk3NzI3QzguOTA5MDkgOC45NzcyNyAxMS4wNDU1IDYuODQwOTEgMTEuMDQ1NSA0LjM4NjM2QzExLjA0NTUgMS45MzE4MiA4LjkwOTA5IC0wLjIwNDU0NSA2LjQ1NDU1IC0wLjIwNDU0NUgxMFoiIGZpbGw9IiM0Mjg1RjQiLz4KPC9zdmc+') no-repeat center;
+            background-size: contain;
+        }
+
+
+
+        /* Estilos para mensaje de bienvenida personalizado */
+        .welcome-message-content {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+            max-width: 400px;
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        .welcome-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        .welcome-message-content h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .welcome-message-content p {
+            color: var(--text-light);
+            margin-bottom: 2rem;
+        }
+
+        .loading-spinner-small {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(46, 134, 171, 0.3);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        /* Elementos decorativos */
+        .celebration-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .celebration-icon {
+            position: absolute;
+            font-size: 2rem;
+            animation: bounce 2s ease-in-out infinite;
+            opacity: 0.7;
+        }
+
+        .celebration-icon:nth-child(1) {
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .celebration-icon:nth-child(2) {
+            top: 30%;
+            right: 15%;
+            animation-delay: 0.5s;
+        }
+
+        .celebration-icon:nth-child(3) {
+            bottom: 30%;
+            left: 20%;
+            animation-delay: 1s;
+        }
+
+        .celebration-icon:nth-child(4) {
+            bottom: 20%;
+            right: 10%;
+            animation-delay: 1.5s;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        /* Badge de aniversario flotante */
+        .anniversary-badge {
+            position: absolute;
+            top: 50px;
+            right: 50px;
+            background: linear-gradient(45deg, var(--accent-color), #ff6b35);
+            color: var(--white);
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: var(--shadow-lg);
+            animation: wiggle 2s ease-in-out infinite;
+            transform: rotate(-5deg);
+        }
+
+        @keyframes wiggle {
+            0%, 100% {
+                transform: rotate(-5deg);
+            }
+            50% {
+                transform: rotate(5deg);
+            }
+        }
+
+        /* Animaciones de entrada */
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .welcome-title {
+                font-size: 2.5rem;
+            }
+
+            .anniversary-text {
+                font-size: 1.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+
+            .google-signin-button {
+                padding: 1rem 2rem;
+                font-size: 1.1rem;
+                min-width: 250px;
+            }
+
+            .logo {
+                width: 100px;
+                height: 100px;
+            }
+
+            .anniversary-badge {
+                top: 20px;
+                right: 20px;
+                padding: 0.8rem 1.5rem;
+                font-size: 1rem;
+            }
+
+            .welcome-message-content {
+                padding: 2rem;
+                margin: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .welcome-container {
+                padding: 1rem;
+            }
+
+            .welcome-title {
+                font-size: 2rem;
+            }
+
+            .anniversary-text {
+                font-size: 1.3rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .google-signin-button {
+                min-width: 200px;
+                padding: 0.8rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+
+        /* Efecto de carga */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--light-blue) 0%, var(--light-purple) 50%, var(--light-orange) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .loading-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 2rem;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(46, 134, 171, 0.3);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Overlay de carga -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <img src="logo2.png" alt="Asperger para Asperger" class="loading-logo">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Preparando la experiencia conmemorativa...</div>
+        </div>
+    </div>
+
+    <!-- Partículas de fondo -->
+    <div class="particles-container" id="particlesContainer"></div>
+
+    <!-- Elementos de celebración -->
+    <div class="celebration-elements">
+        <div class="celebration-icon">🎉</div>
+        <div class="celebration-icon">🌟</div>
+        <div class="celebration-icon">💙</div>
+        <div class="celebration-icon">🎊</div>
+    </div>
+
+    <!-- Badge de aniversario -->
+    <div class="anniversary-badge">
+        10 AÑOS
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="welcome-container">
+        <div class="logo-section">
+            <div class="logo-container">
+                <div class="logo-glow"></div>
+                <img src="logo2.png" alt="Asperger para Asperger" class="logo">
+            </div>
+        </div>
+
+        <h1 class="welcome-title">¡Bienvenido!</h1>
+        
+        <h2 class="anniversary-text">Página Conmemorativa</h2>
+        
+        <p class="subtitle">
+            Celebrando 10 años de Asperger para Asperger<br>
+            Una década construyendo comunidad del espectro autista en habla hispana
+        </p>
+
+        <div class="buttons-container">
+            <button class="google-signin-button" id="googleSignInButton" onclick="handleGoogleSignIn()">
+                <div class="google-icon"></div>
+                Continuar con Google
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Ocultar overlay de carga
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                    // Inicializar Google Sign-in después de cargar
+                    if (window.google) {
+                        initializeGoogleSignIn();
+                    }
+                }, 500);
+            }, 1500);
+        });
+
+        // Crear partículas dinámicas
+        function createParticles() {
+            const container = document.getElementById('particlesContainer');
+            const particleCount = 20;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 2 + 's';
+                particle.style.animationDuration = (3 + Math.random() * 4) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Variables globales para Google Sign-in
+        let googleUser = null;
+
+        // Inicializar Google Sign-in
+        function initializeGoogleSignIn() {
+            // Obtener configuración desde archivo externo
+            const config = getGoogleConfig();
+            
+            google.accounts.id.initialize({
+                client_id: config.CLIENT_ID,
+                callback: handleCredentialResponse,
+                auto_select: config.AUTO_SELECT,
+                cancel_on_tap_outside: config.CANCEL_ON_TAP_OUTSIDE
+            });
+
+            // Renderizar el botón de Google
+            google.accounts.id.renderButton(
+                document.getElementById('googleSignInButton'),
+                {
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'continue_with',
+                    shape: 'pill',
+                    logo_alignment: 'left'
+                }
+            );
+        }
+
+        // Manejar respuesta de credenciales de Google
+        function handleCredentialResponse(response) {
+            console.log('Credenciales recibidas:', response);
+            
+            // Decodificar el JWT token
+            const responsePayload = decodeJwtResponse(response.credential);
+            
+            console.log('Usuario autenticado:', responsePayload);
+            
+            // Guardar información del usuario
+            googleUser = {
+                name: responsePayload.name,
+                email: responsePayload.email,
+                picture: responsePayload.picture,
+                id: responsePayload.sub
+            };
+
+            // Mostrar mensaje de bienvenida personalizado
+            showWelcomeMessage(googleUser.name);
+
+            // Redirigir después de un breve delay
+            setTimeout(() => {
+                enterMainPage();
+            }, 2000);
+        }
+
+        // Decodificar JWT response
+        function decodeJwtResponse(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        // Manejar clic en botón de Google (fallback)
+        function handleGoogleSignIn() {
+            // Si no se ha inicializado Google Sign-in, mostrar mensaje
+            if (!window.google) {
+                alert('Google Sign-in no está disponible. Por favor, usa una de las otras opciones.');
+                return;
+            }
+            
+            // Iniciar el flujo de Google Sign-in
+            google.accounts.id.prompt();
+        }
+
+        // Mostrar mensaje de bienvenida personalizado
+        function showWelcomeMessage(userName) {
+            const welcomeMessage = document.createElement('div');
+            welcomeMessage.className = 'welcome-message-overlay';
+            welcomeMessage.innerHTML = `
+                <div class="welcome-message-content">
+                    <div class="welcome-icon">👋</div>
+                    <h3>¡Hola, ${userName}!</h3>
+                    <p>Gracias por unirte a nuestra celebración de 10 años</p>
+                    <div class="loading-spinner-small"></div>
+                </div>
+            `;
+            
+            welcomeMessage.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                animation: fadeIn 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(welcomeMessage);
+        }
+
+        // Función para entrar a la página principal
+        function enterMainPage() {
+            const button = document.querySelector('.google-signin-button');
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+            button.disabled = true;
+
+            // Efecto de transición
+            document.body.style.transition = 'opacity 0.5s ease-out';
+            document.body.style.opacity = '0.8';
+
+            setTimeout(() => {
+                // Guardar información del usuario si está disponible
+                if (googleUser) {
+                    localStorage.setItem('userInfo', JSON.stringify(googleUser));
+                }
+                window.location.href = 'main.html';
+            }, 1000);
+        }
+
+        // Crear partículas al cargar
+        createParticles();
+
+        // Efecto de confetti al hacer clic en el botón de Google
+        document.querySelector('.google-signin-button').addEventListener('click', function(e) {
+            createConfetti(e.clientX, e.clientY);
+        });
+
+        // Función para crear confetti
+        function createConfetti(x, y) {
+            for (let i = 0; i < 15; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.cssText = `
+                    position: fixed;
+                    left: ${x}px;
+                    top: ${y}px;
+                    width: 8px;
+                    height: 8px;
+                    background: ${getRandomColor()};
+                    border-radius: 2px;
+                    pointer-events: none;
+                    z-index: 9999;
+                    animation: confettiFall 1.5s ease-out forwards;
+                `;
+                
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, 1500);
+            }
+        }
+
+        // Obtener color aleatorio para confetti
+        function getRandomColor() {
+            const colors = ['#2e86ab', '#a23b72', '#f18f01', '#4ecdc4', '#96ceb4'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Agregar estilos para confetti
+        const confettiStyles = `
+            @keyframes confettiFall {
+                0% {
+                    transform: translateY(0) rotate(0deg);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(100px) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = confettiStyles;
+        document.head.appendChild(styleSheet);
+
+        // Efecto de hover en el logo
+        document.querySelector('.logo').addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1) rotate(5deg)';
+        });
+
+        document.querySelector('.logo').addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1) rotate(0deg)';
+        });
+
+        // Efecto de teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                enterMainPage();
+            }
+        });
+
+        console.log('🎉 Página de bienvenida cargada exitosamente');
+        console.log('📅 Celebrando 10 años de Asperger para Asperger');
+    </script>
+</body>
+</html>

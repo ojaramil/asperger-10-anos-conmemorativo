@@ -1,0 +1,43 @@
+# GitHub Actions para despliegue automático
+# Este archivo se ejecuta cada vez que haces push al repositorio
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v3
+      
+    - name: Configurar Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Instalar dependencias (si las hay)
+      run: |
+        if [ -f package.json ]; then
+          npm install
+        fi
+        
+    - name: Build (si es necesario)
+      run: |
+        if [ -f package.json ] && [ -f "npm run build" ]; then
+          npm run build
+        fi
+        
+    - name: Desplegar a GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
+
