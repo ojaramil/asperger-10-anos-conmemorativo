@@ -907,5 +907,106 @@
     </div>
 
     <script src="script.js"></script>
+    
+    <script>
+        // Función para guardar usuario en Google Sheets
+        function saveUserToSheets(user) {
+            console.log('Intentando guardar usuario en Google Sheets:', user);
+            
+            // Configuración para Google Sheets
+            const config = {
+                API_KEY: 'AIzaSyB4a9mcXGxsVuVNBsGHziSe70IdADylYX0',
+                SHEETS: {
+                    SPREADSHEET_ID: '1S3mJLZff9lq_MEJxU3L2h4im0hNnEXcd-Dm_uw623PQ',
+                    RANGE: 'Sheet1!A:D'
+                }
+            };
+            
+            // Verificar si Google Sheets está configurado
+            if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
+                console.log('Google Sheets no configurado, saltando guardado');
+                return;
+            }
+
+            // Preparar datos para la hoja
+            const now = new Date();
+            const dateString = now.toLocaleDateString('es-ES');
+            const timeString = now.toLocaleTimeString('es-ES');
+            
+            const rowData = [
+                `${dateString} ${timeString}`, // Fecha
+                user.name,                    // Nombre
+                user.email,                   // Email
+                user.id                       // ID Usuario
+            ];
+
+            console.log('Datos a guardar en Google Sheets:', rowData);
+
+            // Verificar si la API Key está configurada
+            if (!config.API_KEY || config.API_KEY === 'TU_API_KEY_AQUI') {
+                console.log('❌ API Key no configurada, saltando guardado en Google Sheets');
+                return;
+            }
+
+            // Usar Google Sheets API con fetch
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.API_KEY}`;
+            
+            const requestBody = {
+                values: [rowData]
+            };
+
+            console.log('📤 Enviando datos a Google Sheets...');
+            console.log('URL:', url);
+            console.log('Datos:', requestBody);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => {
+                console.log('📥 Respuesta de Google Sheets:', response);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('✅ Usuario guardado exitosamente en Google Sheets:', data);
+            })
+            .catch(error => {
+                console.error('❌ Error al guardar en Google Sheets:', error);
+            });
+        }
+
+        // Función para probar Google Sheets
+        function testGoogleSheets() {
+            console.log('🧪 Probando Google Sheets desde main.html...');
+            
+            const testUser = {
+                name: 'Usuario de Prueba - Main',
+                email: 'prueba@main.com',
+                id: 'test_main_' + Date.now()
+            };
+            
+            saveUserToSheets(testUser);
+        }
+
+        // Verificar si hay datos de usuario en localStorage
+        window.addEventListener('load', function() {
+            const userInfo = localStorage.getItem('userInfo');
+            if (userInfo) {
+                const user = JSON.parse(userInfo);
+                console.log('👤 Usuario encontrado en localStorage:', user);
+                
+                // Guardar en Google Sheets
+                saveUserToSheets(user);
+            } else {
+                console.log('ℹ️ No hay datos de usuario en localStorage');
+            }
+        });
+    </script>
 </body>
 </html>
