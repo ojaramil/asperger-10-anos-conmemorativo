@@ -541,6 +541,9 @@
                 <button class="skip-button" onclick="enterMainPage()" style="margin-top: 1rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;">
                     Ir a la página principal (Prueba)
                 </button>
+                <button class="skip-button" onclick="testGoogleSheets()" style="margin-top: 0.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;">
+                    Probar Google Sheets
+                </button>
             </div>
     </div>
 
@@ -921,22 +924,34 @@
 
             // Función para intentar guardar en Google Sheets
             function trySaveToSheets() {
+                console.log('Verificando disponibilidad de gapi...');
+                
                 if (typeof gapi === 'undefined') {
                     console.log('gapi aún no está disponible, reintentando en 1 segundo...');
                     setTimeout(trySaveToSheets, 1000);
                     return;
                 }
 
-                console.log('gapi disponible, inicializando Google Sheets...');
+                console.log('✅ gapi disponible, inicializando Google Sheets...');
+                console.log('Configuración:', {
+                    clientId: config.CLIENT_ID,
+                    spreadsheetId: config.SHEETS.SPREADSHEET_ID,
+                    range: config.SHEETS.RANGE,
+                    scopes: config.SHEETS.SCOPES
+                });
                 
                 gapi.load('client', () => {
+                    console.log('gapi.load completado, inicializando cliente...');
+                    
                     gapi.client.init({
                         apiKey: config.CLIENT_ID,
                         discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
                         clientId: config.CLIENT_ID,
                         scope: config.SHEETS.SCOPES.join(' ')
                     }).then(() => {
-                        console.log('Google Sheets API inicializada, guardando datos...');
+                        console.log('✅ Google Sheets API inicializada, guardando datos...');
+                        console.log('Datos a enviar:', rowData);
+                        
                         return gapi.client.sheets.spreadsheets.values.append({
                             spreadsheetId: config.SHEETS.SPREADSHEET_ID,
                             range: config.SHEETS.RANGE,
@@ -947,8 +962,14 @@
                         });
                     }).then((response) => {
                         console.log('✅ Usuario guardado exitosamente en Google Sheets:', response);
+                        console.log('Respuesta completa:', response);
                     }).catch((error) => {
                         console.error('❌ Error al guardar en Google Sheets:', error);
+                        console.error('Detalles del error:', {
+                            message: error.message,
+                            status: error.status,
+                            details: error.details
+                        });
                     });
                 });
             }
@@ -1031,6 +1052,20 @@
                     window.location.reload();
                 }
             }, 1000);
+        }
+
+        // Función para probar Google Sheets
+        function testGoogleSheets() {
+            console.log('🧪 Probando Google Sheets...');
+            updateStatus('Probando Google Sheets...');
+            
+            const testUser = {
+                name: 'Usuario de Prueba',
+                email: 'prueba@ejemplo.com',
+                id: 'test_' + Date.now()
+            };
+            
+            saveUserToSheets(testUser);
         }
 
         // Crear partículas al cargar
