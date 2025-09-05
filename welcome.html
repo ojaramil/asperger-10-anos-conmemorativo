@@ -891,6 +891,7 @@
             // Configuración para Google Sheets
             const config = {
                 CLIENT_ID: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
+                API_KEY: 'AIzaSyBvOkBw7iJTlKf1lKf1lKf1lKf1lKf1lKf1', // Necesitas crear una API Key
                 SHEETS: {
                     SPREADSHEET_ID: '1S3mJLZff9lq_MEJxU3L2h4im0hNnEXcd-Dm_uw623PQ',
                     RANGE: 'Sheet1!A:D',
@@ -944,7 +945,6 @@
                     console.log('gapi.load completado, inicializando cliente...');
                     
                     gapi.client.init({
-                        apiKey: config.CLIENT_ID,
                         discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
                         clientId: config.CLIENT_ID,
                         scope: config.SHEETS.SCOPES.join(' ')
