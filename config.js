@@ -15,7 +15,18 @@ const GOOGLE_CONFIG = {
     
     // Configuración adicional
     AUTO_SELECT: false,
-    CANCEL_ON_TAP_OUTSIDE: true
+    CANCEL_ON_TAP_OUTSIDE: true,
+    
+    // Google Sheets configuración
+    SHEETS: {
+        SPREADSHEET_ID: 'TU_SPREADSHEET_ID_AQUI', // Reemplaza con el ID de tu hoja
+        RANGE: 'Sheet1!A:D', // Rango donde escribir los datos
+        SCOPES: [
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/spreadsheets'
+        ]
+    }
 };
 
 // Función para obtener la configuración

@@ -616,6 +616,9 @@
                 id: responsePayload.sub
             };
 
+            // Guardar en Google Sheets
+            saveUserToSheets(googleUser);
+
             // Mostrar mensaje de bienvenida personalizado
             showWelcomeMessage(googleUser.name);
 
@@ -645,6 +648,52 @@
             
             // Iniciar el flujo de Google Sign-in
             google.accounts.id.prompt();
+        }
+
+        // Guardar usuario en Google Sheets
+        function saveUserToSheets(user) {
+            const config = getGoogleConfig();
+            
+            // Verificar si Google Sheets está configurado
+            if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
+                console.log('Google Sheets no configurado, saltando guardado');
+                return;
+            }
+
+            // Preparar datos para la hoja
+            const now = new Date();
+            const dateString = now.toLocaleDateString('es-ES');
+            const timeString = now.toLocaleTimeString('es-ES');
+            
+            const rowData = [
+                `${dateString} ${timeString}`, // Fecha
+                user.name,                    // Nombre
+                user.email,                   // Email
+                user.id                       // ID Usuario
+            ];
+
+            // Usar Google Sheets API para escribir
+            gapi.load('client', () => {
+                gapi.client.init({
+                    apiKey: config.CLIENT_ID,
+                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                    clientId: config.CLIENT_ID,
+                    scope: config.SHEETS.SCOPES.join(' ')
+                }).then(() => {
+                    return gapi.client.sheets.spreadsheets.values.append({
+                        spreadsheetId: config.SHEETS.SPREADSHEET_ID,
+                        range: config.SHEETS.RANGE,
+                        valueInputOption: 'RAW',
+                        resource: {
+                            values: [rowData]
+                        }
+                    });
+                }).then((response) => {
+                    console.log('Usuario guardado en Google Sheets:', response);
+                }).catch((error) => {
+                    console.error('Error al guardar en Google Sheets:', error);
+                });
+            });
         }
 
         // Mostrar mensaje de bienvenida personalizado
