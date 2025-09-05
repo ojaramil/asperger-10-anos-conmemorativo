@@ -921,8 +921,19 @@
                 
                 // Intentar redirección
                 try {
-                    window.location.href = 'main.html';
-                    console.log('Redirección exitosa a main.html');
+                    // Determinar la URL correcta según el dominio
+                    let redirectUrl;
+                    if (window.location.hostname === 'aniversario.aspergerparaasperger.org') {
+                        redirectUrl = 'https://aniversario.aspergerparaasperger.org/main.html';
+                    } else if (window.location.hostname === 'ojaramil.github.io') {
+                        redirectUrl = 'https://ojaramil.github.io/asperger-10-anos-conmemorativo/main.html';
+                    } else {
+                        redirectUrl = 'main.html'; // Para desarrollo local
+                    }
+                    
+                    console.log('Redirigiendo a:', redirectUrl);
+                    window.location.href = redirectUrl;
+                    console.log('Redirección exitosa');
                 } catch (error) {
                     console.error('Error en redirección:', error);
                     // Fallback: recargar la página
