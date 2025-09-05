@@ -531,13 +531,16 @@
             Una década construyendo comunidad del espectro autista en habla hispana
         </p>
 
-        <div class="buttons-container">
-            <button class="google-signin-button" id="googleSignInButton" onclick="handleGoogleSignIn()">
-                <div class="google-icon"></div>
-                <span id="buttonText">Continuar con Google</span>
-            </button>
-            <div id="statusMessage" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;"></div>
-        </div>
+                    <div class="buttons-container">
+                <button class="google-signin-button" id="googleSignInButton" onclick="handleGoogleSignIn()">
+                    <div class="google-icon"></div>
+                    <span id="buttonText">Continuar con Google</span>
+                </button>
+                <div id="statusMessage" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;"></div>
+                <button class="skip-button" onclick="enterMainPage()" style="margin-top: 1rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;">
+                    Ir a la página principal (Prueba)
+                </button>
+            </div>
     </div>
 
     <script>
@@ -640,7 +643,7 @@
                     
                     // Inicializar Google Sign-in con configuración básica
                     google.accounts.id.initialize({
-                        client_id: 'TU_NUEVO_CLIENT_ID_AQUI',
+                        client_id: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
                         callback: handleCredentialResponse,
                         auto_select: false,
                         cancel_on_tap_outside: true
@@ -895,20 +898,36 @@
 
         // Función para entrar a la página principal
         function enterMainPage() {
+            console.log('enterMainPage() llamada');
+            updateStatus('Redirigiendo a la página principal...');
+            
             const button = document.querySelector('.google-signin-button');
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
-            button.disabled = true;
+            if (button) {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+                button.disabled = true;
+            }
 
             // Efecto de transición
             document.body.style.transition = 'opacity 0.5s ease-out';
             document.body.style.opacity = '0.8';
 
             setTimeout(() => {
+                console.log('Redirigiendo a main.html...');
                 // Guardar información del usuario si está disponible
                 if (googleUser) {
                     localStorage.setItem('userInfo', JSON.stringify(googleUser));
+                    console.log('Usuario guardado en localStorage:', googleUser);
                 }
-                window.location.href = 'main.html';
+                
+                // Intentar redirección
+                try {
+                    window.location.href = 'main.html';
+                    console.log('Redirección exitosa a main.html');
+                } catch (error) {
+                    console.error('Error en redirección:', error);
+                    // Fallback: recargar la página
+                    window.location.reload();
+                }
             }, 1000);
         }
 
