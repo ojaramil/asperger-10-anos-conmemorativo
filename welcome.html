@@ -646,6 +646,18 @@
                         cancel_on_tap_outside: true
                     });
                     
+                    // Renderizar el botón de Google
+                    google.accounts.id.renderButton(
+                        document.getElementById('googleSignInButton'),
+                        {
+                            theme: 'outline',
+                            size: 'large',
+                            text: 'continue_with',
+                            shape: 'pill',
+                            logo_alignment: 'left'
+                        }
+                    );
+                    
                     updateStatus('Google Sign-in listo. Haz clic para continuar.');
                 } else {
                     console.error('Google API no disponible');
@@ -736,35 +748,16 @@
         // Manejar clic en botón de Google
         function handleGoogleSignIn() {
             console.log('Botón de Google clickeado');
-            updateStatus('Redirigiendo a Google...');
+            updateStatus('Iniciando autenticación...');
             
-            // Configuración de Google OAuth
-            const clientId = '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com';
-            
-            // Usar la URL correcta de GitHub Pages
-            let redirectUri;
-            if (window.location.hostname === 'ojaramil.github.io') {
-                redirectUri = 'https://ojaramil.github.io/asperger-10-anos-conmemorativo/';
+            // Usar Google Identity Services (más simple, no requiere redirect_uri)
+            if (window.google && window.google.accounts) {
+                google.accounts.id.prompt();
             } else {
-                redirectUri = window.location.origin + window.location.pathname;
+                console.error('Google Identity Services no disponible');
+                updateStatus('Google no disponible. Continuando sin autenticación...');
+                continueWithoutGoogle();
             }
-            
-            const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
-            
-            // Construir URL de Google OAuth
-            const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-                `client_id=${clientId}&` +
-                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                `scope=${encodeURIComponent(scope)}&` +
-                `response_type=code&` +
-                `access_type=offline&` +
-                `prompt=consent`;
-            
-            console.log('Redirigiendo a Google OAuth:', googleAuthUrl);
-            console.log('Redirect URI:', redirectUri);
-            
-            // Redirigir a Google OAuth
-            window.location.href = googleAuthUrl;
         }
 
         // Manejar respuesta del token
