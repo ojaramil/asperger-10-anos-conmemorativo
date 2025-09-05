@@ -534,13 +534,14 @@
         <div class="buttons-container">
             <button class="google-signin-button" id="googleSignInButton" onclick="handleGoogleSignIn()">
                 <div class="google-icon"></div>
-                Continuar con Google
+                <span id="buttonText">Continuar con Google</span>
             </button>
+            <div id="statusMessage" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;"></div>
         </div>
     </div>
 
     <script>
-        // Ocultar overlay de carga
+        // Ocultar overlay de carga e inicializar Google Sign-in
         window.addEventListener('load', function() {
             setTimeout(() => {
                 const loadingOverlay = document.getElementById('loadingOverlay');
@@ -548,11 +549,29 @@
                 setTimeout(() => {
                     loadingOverlay.style.display = 'none';
                     // Inicializar Google Sign-in después de cargar
-                    if (window.google) {
-                        initializeGoogleSignIn();
-                    }
+                    initializeGoogleSignIn();
                 }, 500);
             }, 1500);
+        });
+
+        // También inicializar cuando Google esté disponible
+        window.addEventListener('load', function() {
+            // Esperar a que Google esté disponible
+            const checkGoogle = setInterval(() => {
+                if (window.google && window.google.accounts) {
+                    clearInterval(checkGoogle);
+                    console.log('Google API cargada, inicializando...');
+                    initializeGoogleSignIn();
+                }
+            }, 100);
+            
+            // Timeout después de 10 segundos
+            setTimeout(() => {
+                clearInterval(checkGoogle);
+                if (!window.google) {
+                    console.error('Google API no se cargó en 10 segundos');
+                }
+            }, 10000);
         });
 
         // Crear partículas dinámicas
@@ -576,88 +595,88 @@
 
         // Inicializar Google Sign-in
         function initializeGoogleSignIn() {
-            // Obtener configuración desde archivo externo o variables de entorno
-            const config = getGoogleConfig();
+            console.log('Inicializando Google Sign-in...');
+            updateStatus('Inicializando Google Sign-in...');
             
-            // Verificar si estamos en GitHub Pages y usar variables de entorno
-            if (window.location.hostname === 'ojaramil.github.io') {
-                // En GitHub Pages, usar variables de entorno o configuración hardcodeada
-                const githubConfig = {
-                    CLIENT_ID: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
-                    AUTHORIZED_ORIGINS: [
-                        'https://aniversario.asperger.org',
-                        'https://ojaramil.github.io/asperger-10-anos-conmemorativo',
-                        'http://localhost:3000'
-                    ],
-                    AUTO_SELECT: false,
-                    CANCEL_ON_TAP_OUTSIDE: true,
-                    SHEETS: {
-                        SPREADSHEET_ID: '1S3mJLZff9lq_MEJxU3L2h4im0hNnEXcd-Dm_uw623PQ',
-                        RANGE: 'Sheet1!A:D',
-                        SCOPES: [
-                            'https://www.googleapis.com/auth/userinfo.email',
-                            'https://www.googleapis.com/auth/userinfo.profile',
-                            'https://www.googleapis.com/auth/spreadsheets'
-                        ]
-                    }
-                };
-                
-                google.accounts.id.initialize({
-                    client_id: githubConfig.CLIENT_ID,
-                    callback: handleCredentialResponse,
-                    auto_select: githubConfig.AUTO_SELECT,
-                    cancel_on_tap_outside: githubConfig.CANCEL_ON_TAP_OUTSIDE
-                });
-            } else {
-                // En desarrollo local, usar config.js
+            // Configuración para GitHub Pages
+            const config = {
+                CLIENT_ID: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
+                AUTHORIZED_ORIGINS: [
+                    'https://aniversario.asperger.org',
+                    'https://ojaramil.github.io/asperger-10-anos-conmemorativo',
+                    'http://localhost:3000'
+                ],
+                AUTO_SELECT: false,
+                CANCEL_ON_TAP_OUTSIDE: true,
+                SHEETS: {
+                    SPREADSHEET_ID: '1S3mJLZff9lq_MEJxU3L2h4im0hNnEXcd-Dm_uw623PQ',
+                    RANGE: 'Sheet1!A:D',
+                    SCOPES: [
+                        'https://www.googleapis.com/auth/userinfo.email',
+                        'https://www.googleapis.com/auth/userinfo.profile',
+                        'https://www.googleapis.com/auth/spreadsheets'
+                    ]
+                }
+            };
+            
+            try {
                 google.accounts.id.initialize({
                     client_id: config.CLIENT_ID,
                     callback: handleCredentialResponse,
                     auto_select: config.AUTO_SELECT,
                     cancel_on_tap_outside: config.CANCEL_ON_TAP_OUTSIDE
                 });
+                
+                console.log('Google Sign-in inicializado correctamente');
+                updateStatus('Google Sign-in listo. Haz clic para continuar.');
+            } catch (error) {
+                console.error('Error al inicializar Google Sign-in:', error);
+                updateStatus('Error al inicializar Google Sign-in. Recarga la página.');
             }
+        }
 
-            // Renderizar el botón de Google
-            google.accounts.id.renderButton(
-                document.getElementById('googleSignInButton'),
-                {
-                    theme: 'outline',
-                    size: 'large',
-                    text: 'continue_with',
-                    shape: 'pill',
-                    logo_alignment: 'left'
-                }
-            );
+        // Función para actualizar el mensaje de estado
+        function updateStatus(message) {
+            const statusElement = document.getElementById('statusMessage');
+            if (statusElement) {
+                statusElement.textContent = message;
+            }
         }
 
         // Manejar respuesta de credenciales de Google
         function handleCredentialResponse(response) {
             console.log('Credenciales recibidas:', response);
+            updateStatus('Procesando autenticación...');
             
-            // Decodificar el JWT token
-            const responsePayload = decodeJwtResponse(response.credential);
-            
-            console.log('Usuario autenticado:', responsePayload);
-            
-            // Guardar información del usuario
-            googleUser = {
-                name: responsePayload.name,
-                email: responsePayload.email,
-                picture: responsePayload.picture,
-                id: responsePayload.sub
-            };
+            try {
+                // Decodificar el JWT token
+                const responsePayload = decodeJwtResponse(response.credential);
+                
+                console.log('Usuario autenticado:', responsePayload);
+                updateStatus('¡Autenticación exitosa!');
+                
+                // Guardar información del usuario
+                googleUser = {
+                    name: responsePayload.name,
+                    email: responsePayload.email,
+                    picture: responsePayload.picture,
+                    id: responsePayload.sub
+                };
 
-            // Guardar en Google Sheets
-            saveUserToSheets(googleUser);
+                // Guardar en Google Sheets
+                saveUserToSheets(googleUser);
 
-            // Mostrar mensaje de bienvenida personalizado
-            showWelcomeMessage(googleUser.name);
+                // Mostrar mensaje de bienvenida personalizado
+                showWelcomeMessage(googleUser.name);
 
-            // Redirigir después de un breve delay
-            setTimeout(() => {
-                enterMainPage();
-            }, 2000);
+                // Redirigir después de un breve delay
+                setTimeout(() => {
+                    enterMainPage();
+                }, 2000);
+            } catch (error) {
+                console.error('Error al procesar credenciales:', error);
+                updateStatus('Error al procesar la autenticación. Intenta de nuevo.');
+            }
         }
 
         // Decodificar JWT response
@@ -670,41 +689,46 @@
             return JSON.parse(jsonPayload);
         }
 
-        // Manejar clic en botón de Google (fallback)
+        // Manejar clic en botón de Google
         function handleGoogleSignIn() {
-            // Si no se ha inicializado Google Sign-in, mostrar mensaje
-            if (!window.google) {
-                alert('Google Sign-in no está disponible. Por favor, usa una de las otras opciones.');
+            console.log('Botón de Google clickeado');
+            updateStatus('Iniciando autenticación...');
+            
+            // Verificar si Google está disponible
+            if (!window.google || !window.google.accounts) {
+                console.error('Google Sign-in no está disponible');
+                updateStatus('Google Sign-in no está disponible. Recarga la página.');
                 return;
             }
             
-            // Iniciar el flujo de Google Sign-in
-            google.accounts.id.prompt();
+            try {
+                // Iniciar el flujo de Google Sign-in
+                google.accounts.id.prompt();
+                console.log('Prompt de Google iniciado');
+                updateStatus('Selecciona tu cuenta de Google...');
+            } catch (error) {
+                console.error('Error al iniciar Google Sign-in:', error);
+                updateStatus('Error al iniciar la autenticación. Intenta de nuevo.');
+            }
         }
 
         // Guardar usuario en Google Sheets
         function saveUserToSheets(user) {
-            let config;
+            console.log('Intentando guardar usuario en Google Sheets:', user);
             
-            // Obtener configuración según el entorno
-            if (window.location.hostname === 'ojaramil.github.io') {
-                // Configuración para GitHub Pages
-                config = {
-                    CLIENT_ID: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
-                    SHEETS: {
-                        SPREADSHEET_ID: '1S3mJLZff9lq_MEJxU3L2h4im0hNnEXcd-Dm_uw623PQ',
-                        RANGE: 'Sheet1!A:D',
-                        SCOPES: [
-                            'https://www.googleapis.com/auth/userinfo.email',
-                            'https://www.googleapis.com/auth/userinfo.profile',
-                            'https://www.googleapis.com/auth/spreadsheets'
-                        ]
-                    }
-                };
-            } else {
-                // Configuración para desarrollo local
-                config = getGoogleConfig();
-            }
+            // Configuración para Google Sheets
+            const config = {
+                CLIENT_ID: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
+                SHEETS: {
+                    SPREADSHEET_ID: '1S3mJLZff9lq_MEJxU3L2h4im0hNnEXcd-Dm_uw623PQ',
+                    RANGE: 'Sheet1!A:D',
+                    SCOPES: [
+                        'https://www.googleapis.com/auth/userinfo.email',
+                        'https://www.googleapis.com/auth/userinfo.profile',
+                        'https://www.googleapis.com/auth/spreadsheets'
+                    ]
+                }
+            };
             
             // Verificar si Google Sheets está configurado
             if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
