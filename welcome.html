@@ -916,6 +916,12 @@
                 user.id                       // ID Usuario
             ];
 
+            // Verificar si gapi está disponible
+            if (typeof gapi === 'undefined') {
+                console.log('gapi no está disponible, saltando guardado en Google Sheets');
+                return;
+            }
+
             // Usar Google Sheets API para escribir
             gapi.load('client', () => {
                 gapi.client.init({
