@@ -537,10 +537,6 @@
                 <span id="buttonText">Continuar con Google</span>
             </button>
             <div id="statusMessage" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;"></div>
-            <button class="google-signin-button" id="continueButton" onclick="continueWithoutGoogle()" style="margin-top: 1rem; background: var(--secondary-color); border-color: var(--secondary-color);">
-                <i class="fas fa-arrow-right" style="margin-right: 0.5rem;"></i>
-                Continuar sin Google
-            </button>
         </div>
     </div>
 
@@ -615,14 +611,23 @@
                 // Verificar que Google esté disponible
                 if (window.google && window.google.accounts) {
                     console.log('Google API disponible');
+                    
+                    // Inicializar Google Sign-in con configuración básica
+                    google.accounts.id.initialize({
+                        client_id: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
+                        callback: handleCredentialResponse,
+                        auto_select: false,
+                        cancel_on_tap_outside: true
+                    });
+                    
                     updateStatus('Google Sign-in listo. Haz clic para continuar.');
                 } else {
                     console.error('Google API no disponible');
-                    updateStatus('Error: Google API no disponible. Recarga la página.');
+                    updateStatus('Google no disponible. Haz clic para continuar sin autenticación.');
                 }
             } catch (error) {
                 console.error('Error al verificar Google API:', error);
-                updateStatus('Error al verificar Google API. Recarga la página.');
+                updateStatus('Error con Google. Haz clic para continuar sin autenticación.');
             }
         }
 
@@ -710,23 +715,22 @@
             // Verificar si Google está disponible
             if (!window.google || !window.google.accounts) {
                 console.error('Google Sign-in no está disponible');
-                updateStatus('Google Sign-in no está disponible. Recarga la página.');
+                updateStatus('Google no disponible. Continuando sin autenticación...');
+                // Continuar sin Google si no está disponible
+                continueWithoutGoogle();
                 return;
             }
             
             try {
-                // Usar el método más confiable para iniciar Google Sign-in
-                google.accounts.oauth2.initTokenClient({
-                    client_id: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
-                    scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-                    callback: handleTokenResponse
-                }).requestAccessToken();
-                
-                console.log('Token request iniciado');
+                // Usar el método más simple: prompt de Google
+                google.accounts.id.prompt();
+                console.log('Prompt de Google iniciado');
                 updateStatus('Selecciona tu cuenta de Google...');
             } catch (error) {
                 console.error('Error al iniciar Google Sign-in:', error);
-                updateStatus('Error al iniciar la autenticación. Intenta de nuevo.');
+                updateStatus('Error con Google. Continuando sin autenticación...');
+                // Continuar sin Google si hay error
+                continueWithoutGoogle();
             }
         }
 
