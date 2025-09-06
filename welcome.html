@@ -533,10 +533,10 @@
         </p>
 
                     <div class="buttons-container">
-                <button class="google-signin-button" id="googleSignInButton" onclick="handleGoogleSignIn()">
+                <div id="googleSignInButton" class="google-signin-button">
                     <div class="google-icon"></div>
                     <span id="buttonText">Continuar con Google</span>
-                </button>
+                </div>
                 <div id="statusMessage" style="margin-top: 1rem; color: var(--text-light); font-size: 0.9rem;"></div>
                 <button class="skip-button" onclick="enterMainPage()" style="margin-top: 1rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;">
                     Ir a la página principal (Prueba)
@@ -705,17 +705,10 @@
                         cancel_on_tap_outside: config.CANCEL_ON_TAP_OUTSIDE || true
                     });
                     
-                    // Renderizar el botón de Google
-                    google.accounts.id.renderButton(
-                        document.getElementById('googleSignInButton'),
-                        {
-                            theme: 'outline',
-                            size: 'large',
-                            text: 'continue_with',
-                            shape: 'pill',
-                            logo_alignment: 'left'
-                        }
-                    );
+                    // Configurar el botón de Google manualmente
+                    const googleButton = document.getElementById('googleSignInButton');
+                    googleButton.style.cursor = 'pointer';
+                    googleButton.addEventListener('click', handleGoogleSignIn);
                     
                     updateStatus('Google Sign-in listo. Haz clic para continuar.');
                     
@@ -724,10 +717,22 @@
                 } else {
                     console.error('Google API no disponible');
                     updateStatus('Google no disponible. Haz clic para continuar sin autenticación.');
+                    
+                    // Configurar botón de fallback
+                    const googleButton = document.getElementById('googleSignInButton');
+                    googleButton.style.cursor = 'pointer';
+                    googleButton.addEventListener('click', continueWithoutGoogle);
+                    googleButton.innerHTML = '<div class="google-icon"></div><span>Continuar sin Google</span>';
                 }
             } catch (error) {
                 console.error('Error al verificar Google API:', error);
                 updateStatus('Error con Google. Haz clic para continuar sin autenticación.');
+                
+                // Configurar botón de fallback
+                const googleButton = document.getElementById('googleSignInButton');
+                googleButton.style.cursor = 'pointer';
+                googleButton.addEventListener('click', continueWithoutGoogle);
+                googleButton.innerHTML = '<div class="google-icon"></div><span>Continuar sin Google</span>';
             }
         }
 
@@ -886,9 +891,16 @@
             console.log('Botón de Google clickeado');
             updateStatus('Iniciando autenticación...');
             
-            // Usar Google Identity Services (más simple, no requiere redirect_uri)
+            // Usar Google Identity Services
             if (window.google && window.google.accounts) {
-                google.accounts.id.prompt();
+                try {
+                    // Mostrar el popup de Google Sign-in
+                    google.accounts.id.prompt();
+                } catch (error) {
+                    console.error('Error al mostrar popup de Google:', error);
+                    updateStatus('Error al iniciar autenticación. Continuando sin autenticación...');
+                    continueWithoutGoogle();
+                }
             } else {
                 console.error('Google Identity Services no disponible');
                 updateStatus('Google no disponible. Continuando sin autenticación...');
