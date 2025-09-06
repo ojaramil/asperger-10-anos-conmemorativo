@@ -948,21 +948,7 @@
                 return;
             }
 
-            // Por ahora, usar modo simulación hasta configurar permisos
-            console.log('📊 Datos que se guardarían en Google Sheets:');
-            console.log('📅 Fecha:', rowData[0]);
-            console.log('👤 Nombre:', rowData[1]);
-            console.log('📧 Email:', rowData[2]);
-            console.log('🆔 ID:', rowData[3]);
-            console.log('📋 Spreadsheet ID:', config.SHEETS.SPREADSHEET_ID);
-            console.log('📍 Rango:', config.SHEETS.RANGE);
-            
-            // Simular éxito
-            console.log('✅ Simulación: Usuario guardado en Google Sheets');
-            console.log('ℹ️ Para guardar realmente, configura los permisos de la API Key en Google Cloud Console');
-            
-            // TODO: Restaurar cuando se configuren los permisos correctamente
-            /*
+            // Usar Google Sheets API con fetch
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.API_KEY}`;
             
             const requestBody = {
@@ -993,7 +979,6 @@
             .catch(error => {
                 console.error('❌ Error al guardar en Google Sheets:', error);
             });
-            */
         }
 
         // Función para probar Google Sheets
