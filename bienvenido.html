@@ -1139,7 +1139,7 @@
             document.body.style.opacity = '0.8';
 
             setTimeout(() => {
-                console.log('Redirigiendo a main.html...');
+                console.log('Redirigiendo a principal.html...');
                 // Guardar información del usuario si está disponible
                 if (googleUser) {
                     localStorage.setItem('userInfo', JSON.stringify(googleUser));
@@ -1151,11 +1151,11 @@
                     // Determinar la URL correcta según el dominio
                     let redirectUrl;
                     if (window.location.hostname === 'aniversario.aspergerparaasperger.org') {
-                        redirectUrl = 'https://aniversario.aspergerparaasperger.org/main.html';
+                        redirectUrl = 'https://aniversario.aspergerparaasperger.org/principal.html';
                     } else if (window.location.hostname === 'ojaramil.github.io') {
-                        redirectUrl = 'https://ojaramil.github.io/asperger-10-anos-conmemorativo/main.html';
+                        redirectUrl = 'https://ojaramil.github.io/asperger-10-anos-conmemorativo/principal.html';
                     } else {
-                        redirectUrl = 'main.html'; // Para desarrollo local
+                        redirectUrl = 'principal.html'; // Para desarrollo local
                     }
                     
                     console.log('Redirigiendo a:', redirectUrl);
