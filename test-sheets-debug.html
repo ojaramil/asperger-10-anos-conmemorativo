@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Google Sheets - Asperger para Asperger</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="google-config.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #3367d6;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Diagnóstico Google Sheets</h1>
+    <p>Herramienta para diagnosticar por qué no se está guardando en Google Sheets</p>
+
+    <div class="test-section">
+        <h2>1. Verificar Configuración</h2>
+        <button class="test-button" onclick="checkConfig()">Verificar Config</button>
+        <div id="configStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Probar Google Sign-in</h2>
+        <button class="test-button" onclick="testGoogleSignIn()">Iniciar Google Sign-in</button>
+        <div id="signinStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Probar OAuth Token</h2>
+        <button class="test-button" onclick="testOAuthToken()">Obtener OAuth Token</button>
+        <div id="oauthStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Probar Guardado en Sheets</h2>
+        <button class="test-button" onclick="testSheetsSave()">Guardar en Google Sheets</button>
+        <div id="sheetsStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Log de Actividad</h2>
+        <button class="test-button" onclick="clearLog()">Limpiar Log</button>
+        <div id="activityLog"></div>
+    </div>
+
+    <script>
+        let tokenClient;
+        let sheetsAccessToken = null;
+        let currentUser = null;
+
+        // Función de logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            document.getElementById('activityLog').appendChild(logEntry);
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('activityLog').innerHTML = '';
+        }
+
+        // 1. Verificar configuración
+        function checkConfig() {
+            log('🔍 Verificando configuración...');
+            const statusDiv = document.getElementById('configStatus');
+            
+            try {
+                if (typeof getGoogleConfig === 'undefined') {
+                    statusDiv.innerHTML = '<div class="error">❌ getGoogleConfig no está definido</div>';
+                    log('❌ getGoogleConfig no está definido', 'error');
+                    return;
+                }
+
+                const config = getGoogleConfig();
+                log('✅ Configuración obtenida correctamente');
+                
+                let status = '<div class="info">📋 Configuración encontrada:</div>';
+                status += `<pre>CLIENT_ID: ${config.CLIENT_ID ? '✅ Configurado' : '❌ No configurado'}</pre>`;
+                status += `<pre>AUTHORIZED_ORIGINS: ${config.AUTHORIZED_ORIGINS ? '✅ Configurado' : '❌ No configurado'}</pre>`;
+                
+                if (config.SHEETS) {
+                    status += `<pre>SHEETS.SPREADSHEET_ID: ${config.SHEETS.SPREADSHEET_ID ? '✅ Configurado' : '❌ No configurado'}</pre>`;
+                    status += `<pre>SHEETS.RANGE: ${config.SHEETS.RANGE ? '✅ Configurado' : '❌ No configurado'}</pre>`;
+                    status += `<pre>SHEETS.SCOPES: ${config.SHEETS.SCOPES ? '✅ Configurado' : '❌ No configurado'}</pre>`;
+                } else {
+                    status += '<div class="error">❌ SHEETS no está configurado</div>';
+                }
+                
+                statusDiv.innerHTML = status;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                log(`❌ Error en configuración: ${error.message}`, 'error');
+            }
+        }
+
+        // 2. Probar Google Sign-in
+        function testGoogleSignIn() {
+            log('🔐 Iniciando Google Sign-in...');
+            const statusDiv = document.getElementById('signinStatus');
+            
+            try {
+                if (!window.google || !window.google.accounts) {
+                    statusDiv.innerHTML = '<div class="error">❌ Google API no está cargada</div>';
+                    log('❌ Google API no está cargada', 'error');
+                    return;
+                }
+
+                const config = getGoogleConfig();
+                
+                google.accounts.id.initialize({
+                    client_id: config.CLIENT_ID,
+                    callback: handleCredentialResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: true
+                });
+
+                google.accounts.id.prompt();
+                statusDiv.innerHTML = '<div class="info">🔄 Popup de Google abierto. Esperando respuesta...</div>';
+                log('🔄 Popup de Google abierto');
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                log(`❌ Error en Google Sign-in: ${error.message}`, 'error');
+            }
+        }
+
+        // Manejar respuesta de credenciales
+        function handleCredentialResponse(response) {
+            log('📥 Respuesta de credenciales recibida');
+            const statusDiv = document.getElementById('signinStatus');
+            
+            try {
+                if (!response || !response.credential) {
+                    throw new Error('No se recibió credencial válida');
+                }
+
+                const payload = decodeJwtResponse(response.credential);
+                currentUser = {
+                    name: payload.name,
+                    email: payload.email,
+                    picture: payload.picture,
+                    id: payload.sub
+                };
+
+                statusDiv.innerHTML = '<div class="success">✅ Google Sign-in exitoso</div>';
+                log(`✅ Usuario autenticado: ${currentUser.name} (${currentUser.email})`);
+                
+                // Inicializar OAuth Token Client
+                initOAuthTokenClient();
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                log(`❌ Error procesando credenciales: ${error.message}`, 'error');
+            }
+        }
+
+        // Decodificar JWT
+        function decodeJwtResponse(token) {
+            const parts = token.split('.');
+            if (parts.length !== 3) {
+                throw new Error('Token JWT malformado');
+            }
+            
+            const base64Url = parts[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const paddedBase64 = base64 + '='.repeat((4 - base64.length % 4) % 4);
+            const decoded = atob(paddedBase64);
+            const jsonPayload = decodeURIComponent(decoded.split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            
+            return JSON.parse(jsonPayload);
+        }
+
+        // 3. Inicializar OAuth Token Client
+        function initOAuthTokenClient() {
+            log('🔑 Inicializando OAuth Token Client...');
+            
+            try {
+                const config = getGoogleConfig();
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: config.CLIENT_ID,
+                    scope: config.SHEETS.SCOPES.join(' '),
+                    prompt: '',
+                    callback: (resp) => {
+                        if (resp && resp.access_token) {
+                            sheetsAccessToken = resp.access_token;
+                            log('✅ Access token obtenido para Google Sheets');
+                            document.getElementById('oauthStatus').innerHTML = '<div class="success">✅ OAuth Token obtenido</div>';
+                        } else {
+                            log('❌ No se obtuvo access_token', 'error');
+                            document.getElementById('oauthStatus').innerHTML = '<div class="error">❌ Error obteniendo OAuth Token</div>';
+                        }
+                    }
+                });
+                
+                log('✅ OAuth Token Client inicializado');
+                document.getElementById('oauthStatus').innerHTML = '<div class="info">ℹ️ OAuth Token Client listo</div>';
+                
+            } catch (error) {
+                log(`❌ Error inicializando OAuth Token Client: ${error.message}`, 'error');
+                document.getElementById('oauthStatus').innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // 4. Probar OAuth Token
+        function testOAuthToken() {
+            log('🔑 Probando OAuth Token...');
+            const statusDiv = document.getElementById('oauthStatus');
+            
+            if (!tokenClient) {
+                statusDiv.innerHTML = '<div class="error">❌ Token Client no inicializado</div>';
+                log('❌ Token Client no inicializado', 'error');
+                return;
+            }
+
+            if (sheetsAccessToken) {
+                statusDiv.innerHTML = '<div class="success">✅ Token ya disponible</div>';
+                log('✅ Token ya disponible');
+                return;
+            }
+
+            try {
+                tokenClient.requestAccessToken();
+                statusDiv.innerHTML = '<div class="info">🔄 Solicitando token... Esperando respuesta...</div>';
+                log('🔄 Solicitando access token...');
+                
+                // Verificar cada segundo si se obtuvo el token
+                const checkToken = setInterval(() => {
+                    if (sheetsAccessToken) {
+                        clearInterval(checkToken);
+                        statusDiv.innerHTML = '<div class="success">✅ OAuth Token obtenido exitosamente</div>';
+                        log('✅ OAuth Token obtenido exitosamente');
+                    }
+                }, 1000);
+                
+                // Timeout después de 10 segundos
+                setTimeout(() => {
+                    clearInterval(checkToken);
+                    if (!sheetsAccessToken) {
+                        statusDiv.innerHTML = '<div class="error">❌ Timeout obteniendo token</div>';
+                        log('❌ Timeout obteniendo token', 'error');
+                    }
+                }, 10000);
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                log(`❌ Error solicitando token: ${error.message}`, 'error');
+            }
+        }
+
+        // 5. Probar guardado en Google Sheets
+        async function testSheetsSave() {
+            log('📊 Probando guardado en Google Sheets...');
+            const statusDiv = document.getElementById('sheetsStatus');
+            
+            try {
+                const config = getGoogleConfig();
+                
+                if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID) {
+                    statusDiv.innerHTML = '<div class="error">❌ Google Sheets no configurado</div>';
+                    log('❌ Google Sheets no configurado', 'error');
+                    return;
+                }
+
+                if (!sheetsAccessToken) {
+                    statusDiv.innerHTML = '<div class="error">❌ No hay OAuth Token disponible</div>';
+                    log('❌ No hay OAuth Token disponible', 'error');
+                    return;
+                }
+
+                // Crear usuario de prueba
+                const testUser = {
+                    name: 'Usuario de Prueba',
+                    email: 'prueba@test.com',
+                    id: 'test_' + Date.now()
+                };
+
+                const now = new Date();
+                const rowData = [
+                    `${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES')}`,
+                    testUser.name,
+                    testUser.email,
+                    testUser.id
+                ];
+
+                log(`📊 Datos a guardar: ${JSON.stringify(rowData)}`);
+
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${encodeURIComponent(config.SHEETS.RANGE)}:append?valueInputOption=RAW`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sheetsAccessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ values: [rowData] })
+                });
+
+                log(`📥 Respuesta HTTP: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                statusDiv.innerHTML = '<div class="success">✅ ¡Datos guardados exitosamente en Google Sheets!</div>';
+                log('✅ ¡Datos guardados exitosamente en Google Sheets!');
+                log(`📊 Respuesta: ${JSON.stringify(data)}`);
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                log(`❌ Error guardando en Google Sheets: ${error.message}`, 'error');
+            }
+        }
+
+        // Inicializar cuando la página cargue
+        window.addEventListener('load', function() {
+            log('🚀 Página de diagnóstico cargada');
+            checkConfig();
+        });
+    </script>
+</body>
+</html>

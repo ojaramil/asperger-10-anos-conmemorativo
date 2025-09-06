@@ -951,7 +951,7 @@
                 });
         }
 
-        // Guardar usuario en Google Sheets usando OAuth Bearer Token
+        // Guardar usuario en Google Sheets usando API Key (versión simplificada)
         async function saveUserToSheets(user) {
             console.log('🔄 Intentando guardar usuario en Google Sheets:', user);
             
@@ -960,13 +960,20 @@
                 console.log('📋 Configuración obtenida:', {
                     hasSheets: !!cfg.SHEETS,
                     spreadsheetId: cfg.SHEETS?.SPREADSHEET_ID,
-                    range: cfg.SHEETS?.RANGE
+                    range: cfg.SHEETS?.RANGE,
+                    hasApiKey: !!cfg.SHEETS?.API_KEY
                 });
 
                 // Verificar si Google Sheets está configurado
                 if (!cfg.SHEETS || !cfg.SHEETS.SPREADSHEET_ID || cfg.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
                     console.log('❌ Google Sheets no configurado, saltando guardado');
                     updateStatus('❌ Google Sheets no configurado');
+                    return;
+                }
+
+                if (!cfg.SHEETS.API_KEY || cfg.SHEETS.API_KEY === 'TU_API_KEY_AQUI') {
+                    console.log('❌ API Key no configurada, saltando guardado');
+                    updateStatus('❌ API Key no configurada');
                     return;
                 }
 
@@ -981,14 +988,8 @@
 
                 console.log('📊 Datos a guardar en Google Sheets:', rowData);
 
-                // Asegurar access token con scope de Sheets
-                console.log('🔑 Obteniendo access token para Google Sheets...');
-                updateStatus('🔑 Obteniendo permisos para Google Sheets...');
-                
-                const accessToken = await ensureSheetsAccessToken();
-                console.log('✅ Access token obtenido');
-
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${cfg.SHEETS.SPREADSHEET_ID}/values/${encodeURIComponent(cfg.SHEETS.RANGE)}:append?valueInputOption=RAW`;
+                // Usar API Key en lugar de OAuth para simplificar
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${cfg.SHEETS.SPREADSHEET_ID}/values/${encodeURIComponent(cfg.SHEETS.RANGE)}:append?valueInputOption=RAW&key=${cfg.SHEETS.API_KEY}`;
 
                 const body = { values: [rowData] };
 
@@ -1000,7 +1001,6 @@
                 const resp = await fetch(url, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(body)
