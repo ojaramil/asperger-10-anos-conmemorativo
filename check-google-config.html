@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Configuración de Google</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="config.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .check-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .config-details {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .instructions {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Verificador de Configuración de Google</h1>
+    
+    <div class="check-container">
+        <h2>1. Información del Dominio</h2>
+        <div id="domainInfo" class="status info">Verificando...</div>
+    </div>
+
+    <div class="check-container">
+        <h2>2. Configuración Local</h2>
+        <div id="configInfo" class="status info">Verificando...</div>
+        <div id="configDetails" class="config-details"></div>
+    </div>
+
+    <div class="check-container">
+        <h2>3. Google API Status</h2>
+        <div id="googleApiStatus" class="status info">Verificando...</div>
+    </div>
+
+    <div class="check-container">
+        <h2>4. Test de Inicialización</h2>
+        <div id="initStatus" class="status info">Esperando...</div>
+        <button class="test-button" onclick="testInitialization()">Probar Inicialización</button>
+    </div>
+
+    <div class="check-container">
+        <h2>5. Test de Autenticación</h2>
+        <div id="authStatus" class="status info">Esperando...</div>
+        <div id="googleSignInButton" style="
+            background: white;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            margin: 10px 0;
+        ">
+            <div style="width: 20px; height: 20px; background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEwIDMuMTgxODJDMTAuOTU0NSAzLjE4MTgyIDExLjg2MzYgMy40OTU0NSAxMi41OTU1IDQuMDY4MThMMTUuNDU0NSAxLjIyNzI3QzEzLjkwOTEgLTAuNDA5MDkxIDEwLjA0NTUgLTAuNDA5MDkxIDguNSAxLjIyNzI3QzcuNDU0NTUgLTAuNDA5MDkxIDQuNTkwOTEgLTAuNDA5MDkxIDMuMDQ1NDUgMS4yMjcyN0w1LjkwNDU1IDQuMDY4MThDNi42MzYzNiAzLjQ5NTQ1IDcuNTQ1NDUgMy4xODE4MiA4LjUgMy4xODE4MkMxMC45NTQ1IDMuMTgxODIgMTMgNS4yMjcyNyAxMyA3LjY4MTgyQzEzIDEwLjEzNjQgMTAuOTU0NSAxMi4xODE4IDguNSAxMi4xODE4QzcuNDU0NTUgMTIuMTgxOCA2LjU0NTQ1IDExLjg2MzYgNS44MTM2NCAxMS4yOTA5TDIuOTU0NTUgMTQuMTMxOEM0LjUwOTA5IDE1Ljc2MzYgOC4zNzI3MyAxNS43NjM2IDkuOTE4MTggMTQuMTMxOEMxMS40NjM2IDEyLjUgMTEuNDYzNiA5LjU0NTQ1IDkuOTE4MTggNy45MDkwOUw3LjA1OTA5IDUuMDY4MThDNS40MDkwOSAzLjQ5NTQ1IDIuNTQ1NDUgMy40OTU0NSAwLjk5MDkwOSA1LjA2ODE4Qy0wLjU1NDU0NSA2LjY0MDkxIC0wLjU1NDU0NSAxMC4zNjM2IDAuOTkwOTA5IDExLjkzMThMMy44NSA4LjA5MDkxQzQuNTgxODIgOC42NjM2NCA1LjQ5MDkxIDguOTc3MjcgNi40NTQ1NSA4Ljk3NzI3QzguOTA5MDkgOC45NzcyNyAxMS4wNDU1IDYuODQwOTEgMTEuMDQ1NSA0LjM4NjM2QzExLjA0NTUgMS45MzE4MiA4LjkwOTA5IC0wLjIwNDU0NSA2LjQ1NDU1IC0wLjIwNDU0NUgxMFoiIGZpbGw9IiM0Mjg1RjQiLz4KPC9zdmc+') no-repeat center; background-size: contain;"></div>
+            <span>Probar Google Sign-in</span>
+        </div>
+    </div>
+
+    <div class="check-container">
+        <h2>6. Instrucciones para Google Cloud Console</h2>
+        <div class="instructions">
+            <h3>Si la autenticación falla, verifica en Google Cloud Console:</h3>
+            <ol>
+                <li><strong>Ve a:</strong> <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console > APIs & Services > Credentials</a></li>
+                <li><strong>Selecciona tu proyecto</strong> (el que tiene el Client ID: 523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77)</li>
+                <li><strong>Haz clic en tu OAuth 2.0 Client ID</strong></li>
+                <li><strong>En "Authorized JavaScript origins" agrega:</strong>
+                    <ul>
+                        <li><code>https://aniversario.aspergerparaasperger.org</code></li>
+                        <li><code>https://ojaramil.github.io</code></li>
+                        <li><code>http://localhost:3000</code> (para desarrollo local)</li>
+                    </ul>
+                </li>
+                <li><strong>En "Authorized redirect URIs" agrega:</strong>
+                    <ul>
+                        <li><code>https://aniversario.aspergerparaasperger.org</code></li>
+                        <li><code>https://ojaramil.github.io/asperger-10-anos-conmemorativo</code></li>
+                    </ul>
+                </li>
+                <li><strong>Guarda los cambios</strong> y espera unos minutos para que se propaguen</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        function checkDomainInfo() {
+            const currentOrigin = window.location.origin;
+            const currentHostname = window.location.hostname;
+            const currentProtocol = window.location.protocol;
+            
+            updateStatus('domainInfo', `Origen actual: ${currentOrigin}`, 'info');
+            
+            // Verificar si es HTTPS
+            if (currentProtocol !== 'https:' && currentHostname !== 'localhost') {
+                updateStatus('domainInfo', `⚠️ ADVERTENCIA: No estás usando HTTPS (${currentProtocol}). Google requiere HTTPS en producción.`, 'warning');
+            }
+        }
+
+        function checkConfig() {
+            try {
+                const config = getGoogleConfig();
+                
+                // Verificar Client ID
+                const hasClientId = config.CLIENT_ID && config.CLIENT_ID !== 'TU_CLIENT_ID_AQUI';
+                updateStatus('configInfo', hasClientId ? '✅ Client ID configurado' : '❌ Client ID no configurado', hasClientId ? 'success' : 'error');
+                
+                // Mostrar detalles de configuración
+                const configDetails = document.getElementById('configDetails');
+                configDetails.innerHTML = `
+                    <strong>Client ID:</strong> ${config.CLIENT_ID}<br>
+                    <strong>Orígenes autorizados:</strong><br>
+                    ${config.AUTHORIZED_ORIGINS.map(origin => `• ${origin}`).join('<br>')}<br>
+                    <strong>Auto Select:</strong> ${config.AUTO_SELECT}<br>
+                    <strong>Cancel on Tap Outside:</strong> ${config.CANCEL_ON_TAP_OUTSIDE}
+                `;
+                
+                // Verificar si el origen actual está autorizado
+                const currentOrigin = window.location.origin;
+                const isAuthorized = config.AUTHORIZED_ORIGINS.includes(currentOrigin);
+                
+                if (!isAuthorized) {
+                    updateStatus('configInfo', `❌ El origen actual (${currentOrigin}) no está autorizado`, 'error');
+                } else {
+                    updateStatus('configInfo', `✅ Configuración válida para ${currentOrigin}`, 'success');
+                }
+                
+            } catch (error) {
+                updateStatus('configInfo', `❌ Error al cargar configuración: ${error.message}`, 'error');
+            }
+        }
+
+        function checkGoogleAPI() {
+            if (window.google && window.google.accounts) {
+                updateStatus('googleApiStatus', '✅ Google API cargada correctamente', 'success');
+            } else {
+                updateStatus('googleApiStatus', '❌ Google API no disponible', 'error');
+            }
+        }
+
+        function testInitialization() {
+            try {
+                const config = getGoogleConfig();
+                
+                google.accounts.id.initialize({
+                    client_id: config.CLIENT_ID,
+                    callback: handleCredentialResponse,
+                    auto_select: config.AUTO_SELECT,
+                    cancel_on_tap_outside: config.CANCEL_ON_TAP_OUTSIDE
+                });
+                
+                updateStatus('initStatus', '✅ Inicialización exitosa', 'success');
+                
+                // Configurar botón de prueba
+                const googleButton = document.getElementById('googleSignInButton');
+                googleButton.addEventListener('click', handleGoogleSignIn);
+                googleButton.style.display = 'inline-flex';
+                
+            } catch (error) {
+                updateStatus('initStatus', `❌ Error en inicialización: ${error.message}`, 'error');
+            }
+        }
+
+        function handleGoogleSignIn() {
+            updateStatus('authStatus', '🔄 Mostrando popup de Google...', 'info');
+            
+            try {
+                google.accounts.id.prompt();
+                updateStatus('authStatus', '✅ Popup mostrado - Selecciona una cuenta', 'success');
+            } catch (error) {
+                updateStatus('authStatus', `❌ Error al mostrar popup: ${error.message}`, 'error');
+            }
+        }
+
+        function handleCredentialResponse(response) {
+            if (response.error) {
+                updateStatus('authStatus', `❌ Error de autenticación: ${response.error}`, 'error');
+                return;
+            }
+            
+            if (response.credential) {
+                updateStatus('authStatus', '✅ Autenticación exitosa!', 'success');
+                
+                // Decodificar JWT para mostrar información
+                try {
+                    const payload = decodeJwtResponse(response.credential);
+                    const userInfo = document.createElement('div');
+                    userInfo.innerHTML = `
+                        <h3>Usuario autenticado:</h3>
+                        <p><strong>Nombre:</strong> ${payload.name}</p>
+                        <p><strong>Email:</strong> ${payload.email}</p>
+                        <p><strong>ID:</strong> ${payload.sub}</p>
+                    `;
+                    userInfo.style.marginTop = '10px';
+                    userInfo.style.padding = '10px';
+                    userInfo.style.background = '#f8f9fa';
+                    userInfo.style.borderRadius = '4px';
+                    document.getElementById('authStatus').appendChild(userInfo);
+                } catch (error) {
+                    console.error('Error al decodificar JWT:', error);
+                }
+            }
+        }
+
+        function decodeJwtResponse(token) {
+            const parts = token.split('.');
+            const base64Url = parts[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const paddedBase64 = base64 + '='.repeat((4 - base64.length % 4) % 4);
+            const decoded = atob(paddedBase64);
+            const jsonPayload = decodeURIComponent(decoded.split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        // Ejecutar verificaciones al cargar
+        window.addEventListener('load', function() {
+            checkDomainInfo();
+            checkConfig();
+            checkGoogleAPI();
+        });
+
+        // Verificar Google API cuando esté disponible
+        const checkGoogle = setInterval(() => {
+            if (window.google && window.google.accounts) {
+                clearInterval(checkGoogle);
+                checkGoogleAPI();
+            }
+        }, 100);
+
+        setTimeout(() => {
+            clearInterval(checkGoogle);
+        }, 10000);
+    </script>
+</body>
+</html>

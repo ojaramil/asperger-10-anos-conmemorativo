@@ -184,10 +184,27 @@
             updateStatus('buttonStatus', '🔄 Iniciando autenticación...', 'info');
             
             try {
+                // Verificar configuración antes de mostrar popup
+                const config = getGoogleConfig();
+                log(`Client ID: ${config.CLIENT_ID}`);
+                log(`Origen actual: ${window.location.origin}`);
+                log(`Orígenes autorizados: ${config.AUTHORIZED_ORIGINS.join(', ')}`);
+                
+                // Verificar si el origen actual está autorizado
+                const currentOrigin = window.location.origin;
+                const isAuthorized = config.AUTHORIZED_ORIGINS.includes(currentOrigin);
+                log(`¿Origen autorizado? ${isAuthorized ? '✅ Sí' : '❌ No'}`);
+                
+                if (!isAuthorized) {
+                    log(`⚠️ ADVERTENCIA: El origen actual (${currentOrigin}) no está en la lista de orígenes autorizados`, 'error');
+                    log('Esto puede causar que la autenticación falle', 'error');
+                }
+                
                 google.accounts.id.prompt();
                 log('✅ Popup de Google mostrado');
             } catch (error) {
                 log(`❌ Error al mostrar popup: ${error.message}`, 'error');
+                log(`Stack trace: ${error.stack}`, 'error');
                 updateStatus('buttonStatus', '❌ Error al mostrar popup', 'error');
             }
         }
@@ -195,16 +212,28 @@
         // Manejar respuesta de credenciales
         function handleCredentialResponse(response) {
             log('🔄 Credenciales recibidas');
+            log(`Response object: ${JSON.stringify(response, null, 2)}`);
             updateStatus('buttonStatus', '🔄 Procesando credenciales...', 'info');
             
             try {
-                if (!response || !response.credential) {
-                    throw new Error('No se recibió credencial válida');
+                if (!response) {
+                    throw new Error('No se recibió respuesta de Google');
+                }
+                
+                if (response.error) {
+                    throw new Error(`Error de Google: ${response.error} - ${response.details || 'Sin detalles'}`);
+                }
+                
+                if (!response.credential) {
+                    throw new Error('No se recibió credencial válida en la respuesta');
                 }
 
+                log(`Credencial recibida: ${response.credential.substring(0, 50)}...`);
+                
                 // Decodificar JWT
                 const payload = decodeJwtResponse(response.credential);
                 log(`✅ Usuario autenticado: ${payload.name} (${payload.email})`, 'success');
+                log(`Payload completo: ${JSON.stringify(payload, null, 2)}`);
                 
                 googleUser = {
                     name: payload.name,
@@ -218,6 +247,7 @@
                 
             } catch (error) {
                 log(`❌ Error al procesar credenciales: ${error.message}`, 'error');
+                log(`Stack trace: ${error.stack}`, 'error');
                 updateStatus('buttonStatus', '❌ Error en autenticación', 'error');
             }
         }
