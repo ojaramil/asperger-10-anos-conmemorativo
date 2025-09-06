@@ -120,12 +120,24 @@
             margin: 10px 0;
         ">
             <div style="width: 20px; height: 20px; background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEwIDMuMTgxODJDMTAuOTU0NSAzLjE4MTgyIDExLjg2MzYgMy40OTU0NSAxMi41OTU1IDQuMDY4MThMMTUuNDU0NSAxLjIyNzI3QzEzLjkwOTEgLTAuNDA5MDkxIDEwLjA0NTUgLTAuNDA5MDkxIDguNSAxLjIyNzI3QzcuNDU0NTUgLTAuNDA5MDkxIDQuNTkwOTEgLTAuNDA5MDkxIDMuMDQ1NDUgMS4yMjcyN0w1LjkwNDU1IDQuMDY4MThDNi42MzYzNiAzLjQ5NTQ1IDcuNTQ1NDUgMy4xODE4MiA4LjUgMy4xODE4MkMxMC45NTQ1IDMuMTgxODIgMTMgNS4yMjcyNyAxMyA3LjY4MTgyQzEzIDEwLjEzNjQgMTAuOTU0NSAxMi4xODE4IDguNSAxMi4xODE4QzcuNDU0NTUgMTIuMTgxOCA2LjU0NTQ1IDExLjg2MzYgNS44MTM2NCAxMS4yOTA5TDIuOTU0NTUgMTQuMTMxOEM0LjUwOTA5IDE1Ljc2MzYgOC4zNzI3MyAxNS43NjM2IDkuOTE4MTggMTQuMTMxOEMxMS40NjM2IDEyLjUgMTEuNDYzNiA5LjU0NTQ1IDkuOTE4MTggNy45MDkwOUw3LjA1OTA5IDUuMDY4MThDNS40MDkwOSAzLjQ5NTQ1IDIuNTQ1NDUgMy40OTU0NSAwLjk5MDkwOSA1LjA2ODE4Qy0wLjU1NDU0NSA2LjY0MDkxIC0wLjU1NDU0NSAxMC4zNjM2IDAuOTkwOTA5IDExLjkzMThMMy44NSA4LjA5MDkxQzQuNTgxODIgOC42NjM2NCA1LjQ5MDkxIDguOTc3MjcgNi40NTQ1NSA4Ljk3NzI3QzguOTA5MDkgOC45NzcyNyAxMS4wNDU1IDYuODQwOTEgMTEuMDQ1NSA0LjM4NjM2QzExLjA0NTUgMS45MzE4MiA4LjkwOTA5IC0wLjIwNDU0NSA2LjQ1NDU1IC0wLjIwNDU0NUgxMFoiIGZpbGw9IiM0Mjg1RjQiLz4KPC9zdmc+') no-repeat center; background-size: contain;"></div>
-            <span>Probar Google Sign-in</span>
+            <span>Probar Google Sign-in (Popup)</span>
         </div>
+        
+        <div style="margin: 10px 0;">
+            <button class="test-button" onclick="testRenderButton()">Probar con Render Button (Alternativa)</button>
+        </div>
+        
+        <div id="renderButtonContainer" style="margin: 10px 0;"></div>
     </div>
 
     <div class="check-container">
-        <h2>6. Instrucciones para Google Cloud Console</h2>
+        <h2>6. Diagnóstico de Popup</h2>
+        <div id="popupDiagnosis" class="status info">Verificando...</div>
+        <button class="test-button" onclick="diagnosePopupIssues()">Diagnosticar Problemas de Popup</button>
+    </div>
+
+    <div class="check-container">
+        <h2>7. Instrucciones para Google Cloud Console</h2>
         <div class="instructions">
             <h3>Si la autenticación falla, verifica en Google Cloud Console:</h3>
             <ol>
@@ -250,9 +262,40 @@
             updateStatus('authStatus', '🔄 Mostrando popup de Google...', 'info');
             
             try {
+                // Verificar si Google está disponible
+                if (!window.google || !window.google.accounts) {
+                    updateStatus('authStatus', '❌ Google API no disponible', 'error');
+                    return;
+                }
+                
+                // Verificar si la inicialización se hizo correctamente
+                if (typeof google.accounts.id.prompt !== 'function') {
+                    updateStatus('authStatus', '❌ Google Sign-in no inicializado correctamente', 'error');
+                    return;
+                }
+                
+                // Mostrar información de depuración
+                console.log('Intentando mostrar popup de Google...');
+                console.log('Google API disponible:', !!window.google);
+                console.log('Google accounts disponible:', !!window.google.accounts);
+                console.log('Prompt function disponible:', typeof google.accounts.id.prompt);
+                
+                // Intentar mostrar el popup
                 google.accounts.id.prompt();
-                updateStatus('authStatus', '✅ Popup mostrado - Selecciona una cuenta', 'success');
+                
+                // Verificar si el popup se mostró (esto es difícil de detectar directamente)
+                updateStatus('authStatus', '✅ Comando prompt() ejecutado - Revisa si aparece el popup', 'success');
+                
+                // Si no aparece popup en 3 segundos, mostrar advertencia
+                setTimeout(() => {
+                    const currentStatus = document.getElementById('authStatus').textContent;
+                    if (currentStatus.includes('Comando prompt() ejecutado')) {
+                        updateStatus('authStatus', '⚠️ Popup no detectado - Puede ser bloqueado por el navegador o configuración', 'warning');
+                    }
+                }, 3000);
+                
             } catch (error) {
+                console.error('Error al mostrar popup:', error);
                 updateStatus('authStatus', `❌ Error al mostrar popup: ${error.message}`, 'error');
             }
         }
@@ -327,6 +370,113 @@
             checkConfig();
             checkGoogleAPI();
         });
+
+        // Función para diagnosticar problemas de popup
+        function diagnosePopupIssues() {
+            updateStatus('popupDiagnosis', '🔍 Diagnosticando problemas de popup...', 'info');
+            
+            let issues = [];
+            let solutions = [];
+            
+            // 1. Verificar si estamos en HTTPS
+            if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+                issues.push('❌ No estás usando HTTPS');
+                solutions.push('Google requiere HTTPS en producción. Usa https://aniversario.aspergerparaasperger.org');
+            } else {
+                issues.push('✅ Usando HTTPS correctamente');
+            }
+            
+            // 2. Verificar si Google API está cargada
+            if (!window.google || !window.google.accounts) {
+                issues.push('❌ Google API no está cargada');
+                solutions.push('Verifica tu conexión a internet y que no haya bloqueadores de scripts');
+            } else {
+                issues.push('✅ Google API cargada correctamente');
+            }
+            
+            // 3. Verificar si la inicialización se hizo
+            if (typeof google.accounts.id.prompt !== 'function') {
+                issues.push('❌ Google Sign-in no inicializado');
+                solutions.push('Haz clic en "Probar Inicialización" primero');
+            } else {
+                issues.push('✅ Google Sign-in inicializado');
+            }
+            
+            // 4. Verificar configuración
+            try {
+                const config = getGoogleConfig();
+                const currentOrigin = window.location.origin;
+                const isAuthorized = config.AUTHORIZED_ORIGINS.includes(currentOrigin);
+                
+                if (!isAuthorized) {
+                    issues.push(`❌ Origen ${currentOrigin} no autorizado`);
+                    solutions.push('Agrega este origen en Google Cloud Console > Authorized JavaScript origins');
+                } else {
+                    issues.push('✅ Origen autorizado correctamente');
+                }
+            } catch (error) {
+                issues.push('❌ Error al verificar configuración');
+                solutions.push('Verifica que google-config.js se esté cargando correctamente');
+            }
+            
+            // 5. Verificar bloqueadores de popup
+            issues.push('⚠️ Verifica que no tengas bloqueadores de popup activados');
+            solutions.push('Desactiva bloqueadores de popup para este sitio');
+            
+            // 6. Verificar si ya hay una sesión activa
+            try {
+                const existingCredential = google.accounts.id.getCredential();
+                if (existingCredential) {
+                    issues.push('ℹ️ Ya hay una sesión activa de Google');
+                    solutions.push('Cierra sesión de Google primero o usa una ventana de incógnito');
+                }
+            } catch (error) {
+                // No hay sesión activa, esto está bien
+            }
+            
+            // Mostrar resultados
+            const diagnosisText = issues.join('<br>');
+            const solutionsText = solutions.length > 0 ? '<br><br><strong>Soluciones:</strong><br>' + solutions.join('<br>') : '';
+            
+            updateStatus('popupDiagnosis', diagnosisText + solutionsText, issues.some(i => i.includes('❌')) ? 'error' : 'info');
+        }
+
+        // Función para probar con renderButton (alternativa más confiable)
+        function testRenderButton() {
+            try {
+                if (!window.google || !window.google.accounts) {
+                    updateStatus('authStatus', '❌ Google API no disponible para renderButton', 'error');
+                    return;
+                }
+
+                const config = getGoogleConfig();
+                
+                // Limpiar contenedor anterior
+                const container = document.getElementById('renderButtonContainer');
+                container.innerHTML = '';
+                
+                // Crear un nuevo div para el botón
+                const buttonDiv = document.createElement('div');
+                buttonDiv.id = 'renderButtonTest';
+                container.appendChild(buttonDiv);
+                
+                // Renderizar el botón de Google
+                google.accounts.id.renderButton(buttonDiv, {
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'continue_with',
+                    shape: 'pill',
+                    logo_alignment: 'left',
+                    callback: handleCredentialResponse
+                });
+                
+                updateStatus('authStatus', '✅ Botón renderizado - Haz clic en el botón azul de Google', 'success');
+                
+            } catch (error) {
+                console.error('Error al renderizar botón:', error);
+                updateStatus('authStatus', `❌ Error al renderizar botón: ${error.message}`, 'error');
+            }
+        }
 
         // Verificar Google API cuando esté disponible
         const checkGoogle = setInterval(() => {
