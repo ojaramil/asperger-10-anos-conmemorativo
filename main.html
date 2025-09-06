@@ -918,10 +918,16 @@
             try {
                 // Obtener configuración desde config.js
                 const config = getGoogleConfig();
+                console.log('📋 Configuración obtenida:', {
+                    hasSheets: !!config.SHEETS,
+                    spreadsheetId: config.SHEETS?.SPREADSHEET_ID,
+                    apiKey: config.SHEETS?.API_KEY ? 'Configurada' : 'No configurada',
+                    range: config.SHEETS?.RANGE
+                });
                 
                 // Verificar si Google Sheets está configurado
                 if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
-                    console.log('Google Sheets no configurado, saltando guardado');
+                    console.log('❌ Google Sheets no configurado, saltando guardado');
                     return;
                 }
 
@@ -938,12 +944,12 @@
                 
                 const rowData = [
                     `${dateString} ${timeString}`, // Fecha
-                    user.name,                    // Nombre
-                    user.email,                   // Email
-                    user.id                       // ID Usuario
+                    user.name || 'Sin nombre',     // Nombre
+                    user.email || 'Sin email',     // Email
+                    user.id || 'Sin ID'            // ID Usuario
                 ];
 
-                console.log('Datos a guardar en Google Sheets:', rowData);
+                console.log('📊 Datos a guardar en Google Sheets:', rowData);
 
                 // Usar Google Sheets API con fetch
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.SHEETS.API_KEY}`;
@@ -954,6 +960,7 @@
 
                 console.log('📤 Enviando datos a Google Sheets...');
                 console.log('URL:', url);
+                console.log('Request Body:', requestBody);
 
                 fetch(url, {
                     method: 'POST',
@@ -963,9 +970,17 @@
                     body: JSON.stringify(requestBody)
                 })
                 .then(response => {
-                    console.log('📥 Respuesta de Google Sheets:', response);
+                    console.log('📥 Respuesta de Google Sheets:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        ok: response.ok
+                    });
+                    
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.text().then(text => {
+                            console.error('Error response body:', text);
+                            throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
+                        });
                     }
                     return response.json();
                 })
@@ -976,7 +991,7 @@
                     console.error('❌ Error al guardar en Google Sheets:', error);
                 });
             } catch (error) {
-                console.error('Error en saveUserToSheets:', error);
+                console.error('❌ Error en saveUserToSheets:', error);
             }
         }
 

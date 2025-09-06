@@ -889,22 +889,29 @@
 
         // Guardar usuario en Google Sheets usando Google Apps Script
         function saveUserToSheets(user) {
-            console.log('Intentando guardar usuario en Google Sheets:', user);
+            console.log('🔄 Intentando guardar usuario en Google Sheets:', user);
             
             try {
                 // Obtener configuración desde config.js
                 const config = getGoogleConfig();
+                console.log('📋 Configuración obtenida:', {
+                    hasSheets: !!config.SHEETS,
+                    spreadsheetId: config.SHEETS?.SPREADSHEET_ID,
+                    apiKey: config.SHEETS?.API_KEY ? 'Configurada' : 'No configurada',
+                    range: config.SHEETS?.RANGE
+                });
                 
                 // Verificar si Google Sheets está configurado
                 if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
-                    console.log('Google Sheets no configurado, saltando guardado');
+                    console.log('❌ Google Sheets no configurado, saltando guardado');
+                    updateStatus('❌ Google Sheets no configurado');
                     return;
                 }
 
                 // Verificar si la API Key está configurada
                 if (!config.SHEETS.API_KEY || config.SHEETS.API_KEY === 'TU_API_KEY_AQUI') {
                     console.log('❌ API Key no configurada, saltando guardado en Google Sheets');
-                    updateStatus('⚠️ API Key no configurada para Google Sheets');
+                    updateStatus('❌ API Key no configurada para Google Sheets');
                     return;
                 }
 
@@ -915,12 +922,12 @@
                 
                 const rowData = [
                     `${dateString} ${timeString}`, // Fecha
-                    user.name,                    // Nombre
-                    user.email,                   // Email
-                    user.id                       // ID Usuario
+                    user.name || 'Sin nombre',     // Nombre
+                    user.email || 'Sin email',     // Email
+                    user.id || 'Sin ID'            // ID Usuario
                 ];
 
-                console.log('Datos a guardar en Google Sheets:', rowData);
+                console.log('📊 Datos a guardar en Google Sheets:', rowData);
 
                 // Usar Google Sheets API con fetch
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.SHEETS.API_KEY}`;
@@ -931,7 +938,10 @@
 
                 console.log('📤 Enviando datos a Google Sheets...');
                 console.log('URL:', url);
-                console.log('Datos:', requestBody);
+                console.log('Request Body:', requestBody);
+
+                // Mostrar estado de carga
+                updateStatus('📤 Guardando en Google Sheets...');
 
                 fetch(url, {
                     method: 'POST',
@@ -941,24 +951,90 @@
                     body: JSON.stringify(requestBody)
                 })
                 .then(response => {
-                    console.log('📥 Respuesta de Google Sheets:', response);
+                    console.log('📥 Respuesta de Google Sheets:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        ok: response.ok
+                    });
+                    
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        // Intentar obtener más detalles del error
+                        return response.text().then(text => {
+                            console.error('Error response body:', text);
+                            throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
+                        });
                     }
                     return response.json();
                 })
                 .then(data => {
                     console.log('✅ Usuario guardado exitosamente en Google Sheets:', data);
                     updateStatus('✅ Datos guardados en Google Sheets');
+                    
+                    // Mostrar confirmación visual
+                    showSuccessMessage('Usuario registrado exitosamente');
                 })
                 .catch(error => {
                     console.error('❌ Error al guardar en Google Sheets:', error);
-                    updateStatus('❌ Error al guardar en Google Sheets');
+                    updateStatus('❌ Error al guardar en Google Sheets: ' + error.message);
+                    
+                    // Mostrar error visual
+                    showErrorMessage('Error al guardar en Google Sheets: ' + error.message);
                 });
             } catch (error) {
-                console.error('Error en saveUserToSheets:', error);
-                updateStatus('❌ Error de configuración en Google Sheets');
+                console.error('❌ Error en saveUserToSheets:', error);
+                updateStatus('❌ Error de configuración en Google Sheets: ' + error.message);
+                showErrorMessage('Error de configuración: ' + error.message);
             }
+        }
+
+        // Función para mostrar mensaje de éxito
+        function showSuccessMessage(message) {
+            const successDiv = document.createElement('div');
+            successDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-family: Arial, sans-serif;
+                font-size: 14px;
+                max-width: 300px;
+            `;
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 5000);
+        }
+
+        // Función para mostrar mensaje de error
+        function showErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #dc3545;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-family: Arial, sans-serif;
+                font-size: 14px;
+                max-width: 300px;
+            `;
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 8000);
         }
 
         // Mostrar mensaje de bienvenida personalizado

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Google Sheets - App Conmemorativa</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .test-result.success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .test-result.error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .test-result.warning { background: #fff3cd; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Google Sheets - App Conmemorativa</h1>
+    
+    <div class="test-section">
+        <h2>1. Verificar Configuración</h2>
+        <div id="configTest"></div>
+        <button onclick="testConfig()">Probar Configuración</button>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Probar Acceso a Google Sheets</h2>
+        <div id="accessTest"></div>
+        <button onclick="testSheetsAccess()">Probar Acceso</button>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Probar Escritura en Google Sheets</h2>
+        <div id="writeTest"></div>
+        <button onclick="testSheetsWrite()">Probar Escritura</button>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Probar con Usuario Real</h2>
+        <div id="userTest"></div>
+        <button onclick="testWithRealUser()">Probar con Usuario Real</button>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Log de Pruebas</h2>
+        <div id="testLog" class="log"></div>
+        <button onclick="clearLog()">Limpiar Log</button>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let logElement = document.getElementById('testLog');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            logElement.innerHTML = '';
+        }
+
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="test-result ${type}">${message}</div>`;
+        }
+
+        function testConfig() {
+            log('🔍 Probando configuración de Google Sheets...');
+            
+            try {
+                const config = getGoogleConfig();
+                
+                // Verificar configuración general
+                if (!config.SHEETS) {
+                    showResult('configTest', '❌ Configuración de SHEETS no encontrada', 'error');
+                    log('❌ Configuración de SHEETS no encontrada', 'error');
+                    return;
+                }
+
+                let configOk = true;
+                let configMessage = '';
+
+                // Verificar SPREADSHEET_ID
+                if (!config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
+                    configOk = false;
+                    configMessage += '❌ SPREADSHEET_ID no configurado<br>';
+                    log('❌ SPREADSHEET_ID no configurado', 'error');
+                } else {
+                    configMessage += '✅ SPREADSHEET_ID configurado<br>';
+                    log('✅ SPREADSHEET_ID configurado: ' + config.SHEETS.SPREADSHEET_ID.substring(0, 20) + '...', 'success');
+                }
+
+                // Verificar API_KEY
+                if (!config.SHEETS.API_KEY || config.SHEETS.API_KEY === 'TU_API_KEY_AQUI') {
+                    configOk = false;
+                    configMessage += '❌ API_KEY no configurada<br>';
+                    log('❌ API_KEY no configurada', 'error');
+                } else {
+                    configMessage += '✅ API_KEY configurada<br>';
+                    log('✅ API_KEY configurada: ' + config.SHEETS.API_KEY.substring(0, 20) + '...', 'success');
+                }
+
+                // Verificar RANGE
+                if (!config.SHEETS.RANGE) {
+                    configOk = false;
+                    configMessage += '❌ RANGE no configurado<br>';
+                    log('❌ RANGE no configurado', 'error');
+                } else {
+                    configMessage += '✅ RANGE configurado: ' + config.SHEETS.RANGE + '<br>';
+                    log('✅ RANGE configurado: ' + config.SHEETS.RANGE, 'success');
+                }
+
+                if (configOk) {
+                    showResult('configTest', configMessage, 'success');
+                    log('✅ Configuración completa', 'success');
+                } else {
+                    showResult('configTest', configMessage, 'error');
+                    log('❌ Configuración incompleta', 'error');
+                }
+
+            } catch (error) {
+                showResult('configTest', '❌ Error al cargar configuración: ' + error.message, 'error');
+                log('❌ Error al cargar configuración: ' + error.message, 'error');
+            }
+        }
+
+        function testSheetsAccess() {
+            log('🔍 Probando acceso a Google Sheets...');
+            
+            try {
+                const config = getGoogleConfig();
+                
+                if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || !config.SHEETS.API_KEY) {
+                    showResult('accessTest', '❌ Configuración incompleta', 'error');
+                    return;
+                }
+
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}?key=${config.SHEETS.API_KEY}`;
+                
+                log('📤 Probando acceso a: ' + url);
+                
+                fetch(url)
+                    .then(response => {
+                        log('📥 Respuesta recibida: ' + response.status + ' ' + response.statusText);
+                        
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            return response.text().then(text => {
+                                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
+                            });
+                        }
+                    })
+                    .then(data => {
+                        log('✅ Acceso exitoso a Google Sheets', 'success');
+                        log('📊 Información de la hoja: ' + JSON.stringify(data.properties, null, 2));
+                        showResult('accessTest', '✅ Acceso exitoso a Google Sheets<br>Título: ' + data.properties.title, 'success');
+                    })
+                    .catch(error => {
+                        log('❌ Error al acceder a Google Sheets: ' + error.message, 'error');
+                        showResult('accessTest', '❌ Error al acceder: ' + error.message, 'error');
+                    });
+
+            } catch (error) {
+                log('❌ Error en testSheetsAccess: ' + error.message, 'error');
+                showResult('accessTest', '❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        function testSheetsWrite() {
+            log('🔍 Probando escritura en Google Sheets...');
+            
+            try {
+                const config = getGoogleConfig();
+                
+                if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || !config.SHEETS.API_KEY) {
+                    showResult('writeTest', '❌ Configuración incompleta', 'error');
+                    return;
+                }
+
+                const now = new Date();
+                const testData = [
+                    now.toLocaleDateString('es-ES') + ' ' + now.toLocaleTimeString('es-ES'),
+                    'Usuario de Prueba',
+                    'prueba@test.com',
+                    'test_' + Date.now()
+                ];
+
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.SHEETS.API_KEY}`;
+                
+                const requestBody = {
+                    values: [testData]
+                };
+
+                log('📤 Enviando datos de prueba: ' + JSON.stringify(testData));
+                log('📤 URL: ' + url);
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                })
+                .then(response => {
+                    log('📥 Respuesta de escritura: ' + response.status + ' ' + response.statusText);
+                    
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return response.text().then(text => {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
+                        });
+                    }
+                })
+                .then(data => {
+                    log('✅ Escritura exitosa en Google Sheets', 'success');
+                    log('📊 Respuesta: ' + JSON.stringify(data, null, 2));
+                    showResult('writeTest', '✅ Escritura exitosa<br>Datos guardados correctamente', 'success');
+                })
+                .catch(error => {
+                    log('❌ Error al escribir en Google Sheets: ' + error.message, 'error');
+                    showResult('writeTest', '❌ Error al escribir: ' + error.message, 'error');
+                });
+
+            } catch (error) {
+                log('❌ Error en testSheetsWrite: ' + error.message, 'error');
+                showResult('writeTest', '❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        function testWithRealUser() {
+            log('🔍 Probando con usuario real...');
+            
+            const testUser = {
+                name: 'Usuario Real de Prueba',
+                email: 'usuario.real@test.com',
+                id: 'real_user_' + Date.now()
+            };
+
+            log('👤 Usuario de prueba: ' + JSON.stringify(testUser));
+
+            // Simular la función saveUserToSheets
+            saveUserToSheets(testUser);
+        }
+
+        // Función saveUserToSheets (copiada de welcome.html)
+        function saveUserToSheets(user) {
+            log('🔄 Intentando guardar usuario en Google Sheets:', user);
+            
+            try {
+                const config = getGoogleConfig();
+                log('📋 Configuración obtenida:', {
+                    hasSheets: !!config.SHEETS,
+                    spreadsheetId: config.SHEETS?.SPREADSHEET_ID,
+                    apiKey: config.SHEETS?.API_KEY ? 'Configurada' : 'No configurada',
+                    range: config.SHEETS?.RANGE
+                });
+                
+                if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
+                    log('❌ Google Sheets no configurado, saltando guardado', 'error');
+                    showResult('userTest', '❌ Google Sheets no configurado', 'error');
+                    return;
+                }
+
+                if (!config.SHEETS.API_KEY || config.SHEETS.API_KEY === 'TU_API_KEY_AQUI') {
+                    log('❌ API Key no configurada, saltando guardado en Google Sheets', 'error');
+                    showResult('userTest', '❌ API Key no configurada', 'error');
+                    return;
+                }
+
+                const now = new Date();
+                const dateString = now.toLocaleDateString('es-ES');
+                const timeString = now.toLocaleTimeString('es-ES');
+                
+                const rowData = [
+                    `${dateString} ${timeString}`,
+                    user.name || 'Sin nombre',
+                    user.email || 'Sin email',
+                    user.id || 'Sin ID'
+                ];
+
+                log('📊 Datos a guardar en Google Sheets:', rowData);
+
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.SHEETS.API_KEY}`;
+                
+                const requestBody = {
+                    values: [rowData]
+                };
+
+                log('📤 Enviando datos a Google Sheets...');
+                log('URL:', url);
+                log('Request Body:', requestBody);
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                })
+                .then(response => {
+                    log('📥 Respuesta de Google Sheets:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        ok: response.ok
+                    });
+                    
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            log('Error response body:', text, 'error');
+                            throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    log('✅ Usuario guardado exitosamente en Google Sheets:', data, 'success');
+                    showResult('userTest', '✅ Usuario guardado exitosamente', 'success');
+                })
+                .catch(error => {
+                    log('❌ Error al guardar en Google Sheets:', error, 'error');
+                    showResult('userTest', '❌ Error al guardar: ' + error.message, 'error');
+                });
+            } catch (error) {
+                log('❌ Error en saveUserToSheets:', error, 'error');
+                showResult('userTest', '❌ Error de configuración: ' + error.message, 'error');
+            }
+        }
+
+        // Ejecutar pruebas automáticamente al cargar
+        window.addEventListener('load', function() {
+            log('🚀 Iniciando pruebas de Google Sheets...');
+            testConfig();
+        });
+    </script>
+</body>
+</html>
