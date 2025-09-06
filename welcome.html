@@ -634,6 +634,55 @@
 
         // Variables globales para Google Sign-in
         let googleUser = null;
+        let tokenClient;
+        let sheetsAccessToken = null;
+
+        // Inicializar OAuth Token Client para Google Sheets
+        function initOAuthTokenClient() {
+            try {
+                const cfg = getGoogleConfig();
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: cfg.CLIENT_ID,
+                    scope: cfg.SHEETS.SCOPES.join(' '), // incluye .../spreadsheets
+                    prompt: '', // usa 'consent' solo la 1a vez si quieres forzar consentimiento
+                    callback: (resp) => {
+                        if (resp && resp.access_token) {
+                            sheetsAccessToken = resp.access_token;
+                            console.log('✅ Access token listo para Sheets');
+                        } else {
+                            console.error('No se obtuvo access_token', resp);
+                        }
+                    }
+                });
+                console.log('✅ OAuth Token Client inicializado');
+            } catch (error) {
+                console.error('❌ Error al inicializar OAuth Token Client:', error);
+            }
+        }
+
+        // Asegurar access token para Google Sheets
+        function ensureSheetsAccessToken() {
+            return new Promise((resolve, reject) => {
+                if (sheetsAccessToken) return resolve(sheetsAccessToken);
+                if (!tokenClient) return reject(new Error('Token client no inicializado'));
+                
+                console.log('🔄 Solicitando access token para Google Sheets...');
+                tokenClient.requestAccessToken(); // dispara callback de arriba
+                
+                // poll simple; también puedes engancharlo a la callback:
+                const start = Date.now();
+                const t = setInterval(() => {
+                    if (sheetsAccessToken) { 
+                        clearInterval(t); 
+                        resolve(sheetsAccessToken); 
+                    }
+                    else if (Date.now() - start > 10000) { 
+                        clearInterval(t); 
+                        reject(new Error('Timeout obteniendo token')); 
+                    }
+                }, 200);
+            });
+        }
 
         // Inicializar Google Sign-in
         function initializeGoogleSignIn() {
@@ -669,6 +718,9 @@
                     );
                     
                     updateStatus('Google Sign-in listo. Haz clic para continuar.');
+                    
+                    // Inicializar OAuth Token Client para Google Sheets
+                    initOAuthTokenClient();
                 } else {
                     console.error('Google API no disponible');
                     updateStatus('Google no disponible. Haz clic para continuar sin autenticación.');
@@ -887,103 +939,86 @@
                 });
         }
 
-        // Guardar usuario en Google Sheets usando Google Apps Script
-        function saveUserToSheets(user) {
+        // Guardar usuario en Google Sheets usando OAuth Bearer Token
+        async function saveUserToSheets(user) {
             console.log('🔄 Intentando guardar usuario en Google Sheets:', user);
             
             try {
-                // Obtener configuración desde config.js
-                const config = getGoogleConfig();
+                const cfg = getGoogleConfig();
                 console.log('📋 Configuración obtenida:', {
-                    hasSheets: !!config.SHEETS,
-                    spreadsheetId: config.SHEETS?.SPREADSHEET_ID,
-                    apiKey: config.SHEETS?.API_KEY ? 'Configurada' : 'No configurada',
-                    range: config.SHEETS?.RANGE
+                    hasSheets: !!cfg.SHEETS,
+                    spreadsheetId: cfg.SHEETS?.SPREADSHEET_ID,
+                    range: cfg.SHEETS?.RANGE
                 });
-                
+
                 // Verificar si Google Sheets está configurado
-                if (!config.SHEETS || !config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
+                if (!cfg.SHEETS || !cfg.SHEETS.SPREADSHEET_ID || cfg.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
                     console.log('❌ Google Sheets no configurado, saltando guardado');
                     updateStatus('❌ Google Sheets no configurado');
                     return;
                 }
 
-                // Verificar si la API Key está configurada
-                if (!config.SHEETS.API_KEY || config.SHEETS.API_KEY === 'TU_API_KEY_AQUI') {
-                    console.log('❌ API Key no configurada, saltando guardado en Google Sheets');
-                    updateStatus('❌ API Key no configurada para Google Sheets');
-                    return;
-                }
-
-                // Preparar datos para la hoja
+                // Preparar datos
                 const now = new Date();
-                const dateString = now.toLocaleDateString('es-ES');
-                const timeString = now.toLocaleTimeString('es-ES');
-                
                 const rowData = [
-                    `${dateString} ${timeString}`, // Fecha
-                    user.name || 'Sin nombre',     // Nombre
-                    user.email || 'Sin email',     // Email
-                    user.id || 'Sin ID'            // ID Usuario
+                    `${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES')}`,
+                    user.name || 'Sin nombre',
+                    user.email || 'Sin email',
+                    user.id || 'Sin ID'
                 ];
 
                 console.log('📊 Datos a guardar en Google Sheets:', rowData);
 
-                // Usar Google Sheets API con fetch
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.SHEETS.API_KEY}`;
+                // Asegurar access token con scope de Sheets
+                console.log('🔑 Obteniendo access token para Google Sheets...');
+                updateStatus('🔑 Obteniendo permisos para Google Sheets...');
                 
-                const requestBody = {
-                    values: [rowData]
-                };
+                const accessToken = await ensureSheetsAccessToken();
+                console.log('✅ Access token obtenido');
+
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${cfg.SHEETS.SPREADSHEET_ID}/values/${encodeURIComponent(cfg.SHEETS.RANGE)}:append?valueInputOption=RAW`;
+
+                const body = { values: [rowData] };
 
                 console.log('📤 Enviando datos a Google Sheets...');
                 console.log('URL:', url);
-                console.log('Request Body:', requestBody);
-
-                // Mostrar estado de carga
+                console.log('Request Body:', body);
                 updateStatus('📤 Guardando en Google Sheets...');
 
-                fetch(url, {
+                const resp = await fetch(url, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(requestBody)
-                })
-                .then(response => {
-                    console.log('📥 Respuesta de Google Sheets:', {
-                        status: response.status,
-                        statusText: response.statusText,
-                        ok: response.ok
-                    });
-                    
-                    if (!response.ok) {
-                        // Intentar obtener más detalles del error
-                        return response.text().then(text => {
-                            console.error('Error response body:', text);
-                            throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('✅ Usuario guardado exitosamente en Google Sheets:', data);
-                    updateStatus('✅ Datos guardados en Google Sheets');
-                    
-                    // Mostrar confirmación visual
-                    showSuccessMessage('Usuario registrado exitosamente');
-                })
-                .catch(error => {
-                    console.error('❌ Error al guardar en Google Sheets:', error);
-                    updateStatus('❌ Error al guardar en Google Sheets: ' + error.message);
-                    
-                    // Mostrar error visual
-                    showErrorMessage('Error al guardar en Google Sheets: ' + error.message);
+                    body: JSON.stringify(body)
                 });
+
+                console.log('📥 Respuesta de Google Sheets:', {
+                    status: resp.status,
+                    statusText: resp.statusText,
+                    ok: resp.ok
+                });
+
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    console.error('Error response body:', text);
+                    throw new Error(`HTTP ${resp.status}: ${resp.statusText} - ${text}`);
+                }
+
+                const data = await resp.json();
+                console.log('✅ Usuario guardado exitosamente en Google Sheets:', data);
+                updateStatus('✅ Datos guardados en Google Sheets');
+                
+                // Mostrar confirmación visual
+                showSuccessMessage('Usuario registrado exitosamente');
+
             } catch (error) {
-                console.error('❌ Error en saveUserToSheets:', error);
-                updateStatus('❌ Error de configuración en Google Sheets: ' + error.message);
-                showErrorMessage('Error de configuración: ' + error.message);
+                console.error('❌ Error al guardar en Google Sheets:', error);
+                updateStatus('❌ Error al guardar en Google Sheets: ' + error.message);
+                
+                // Mostrar error visual
+                showErrorMessage('Error al guardar en Google Sheets: ' + error.message);
             }
         }
 

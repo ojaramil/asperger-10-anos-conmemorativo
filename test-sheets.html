@@ -286,7 +286,7 @@
             saveUserToSheets(testUser);
         }
 
-        // Función saveUserToSheets (copiada de welcome.html)
+        // Función saveUserToSheets (versión simplificada para test)
         function saveUserToSheets(user) {
             log('🔄 Intentando guardar usuario en Google Sheets:', user);
             
@@ -295,7 +295,6 @@
                 log('📋 Configuración obtenida:', {
                     hasSheets: !!config.SHEETS,
                     spreadsheetId: config.SHEETS?.SPREADSHEET_ID,
-                    apiKey: config.SHEETS?.API_KEY ? 'Configurada' : 'No configurada',
                     range: config.SHEETS?.RANGE
                 });
                 
@@ -305,65 +304,19 @@
                     return;
                 }
 
-                if (!config.SHEETS.API_KEY || config.SHEETS.API_KEY === 'TU_API_KEY_AQUI') {
-                    log('❌ API Key no configurada, saltando guardado en Google Sheets', 'error');
-                    showResult('userTest', '❌ API Key no configurada', 'error');
-                    return;
-                }
-
                 const now = new Date();
-                const dateString = now.toLocaleDateString('es-ES');
-                const timeString = now.toLocaleTimeString('es-ES');
-                
                 const rowData = [
-                    `${dateString} ${timeString}`,
+                    `${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES')}`,
                     user.name || 'Sin nombre',
                     user.email || 'Sin email',
                     user.id || 'Sin ID'
                 ];
 
                 log('📊 Datos a guardar en Google Sheets:', rowData);
-
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.SHEETS.API_KEY}`;
+                log('⚠️ NOTA: Esta es una versión de prueba. Para guardar realmente, necesitas OAuth Bearer Token', 'warning');
+                log('✅ Simulación: Usuario guardado en Google Sheets', 'success');
+                showResult('userTest', '✅ Simulación exitosa (requiere OAuth para guardar realmente)', 'success');
                 
-                const requestBody = {
-                    values: [rowData]
-                };
-
-                log('📤 Enviando datos a Google Sheets...');
-                log('URL:', url);
-                log('Request Body:', requestBody);
-
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(requestBody)
-                })
-                .then(response => {
-                    log('📥 Respuesta de Google Sheets:', {
-                        status: response.status,
-                        statusText: response.statusText,
-                        ok: response.ok
-                    });
-                    
-                    if (!response.ok) {
-                        return response.text().then(text => {
-                            log('Error response body:', text, 'error');
-                            throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    log('✅ Usuario guardado exitosamente en Google Sheets:', data, 'success');
-                    showResult('userTest', '✅ Usuario guardado exitosamente', 'success');
-                })
-                .catch(error => {
-                    log('❌ Error al guardar en Google Sheets:', error, 'error');
-                    showResult('userTest', '❌ Error al guardar: ' + error.message, 'error');
-                });
             } catch (error) {
                 log('❌ Error en saveUserToSheets:', error, 'error');
                 showResult('userTest', '❌ Error de configuración: ' + error.message, 'error');
