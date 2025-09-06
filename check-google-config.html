@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verificar Configuración de Google</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="config.js"></script>
+    <script src="config.public.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -172,6 +172,12 @@
 
         function checkConfig() {
             try {
+                // Verificar si getGoogleConfig está disponible
+                if (typeof getGoogleConfig !== 'function') {
+                    updateStatus('configInfo', '❌ Función getGoogleConfig no está disponible', 'error');
+                    return;
+                }
+                
                 const config = getGoogleConfig();
                 
                 // Verificar Client ID
@@ -213,6 +219,12 @@
 
         function testInitialization() {
             try {
+                // Verificar si getGoogleConfig está disponible
+                if (typeof getGoogleConfig !== 'function') {
+                    updateStatus('initStatus', '❌ Función getGoogleConfig no está disponible', 'error');
+                    return;
+                }
+                
                 const config = getGoogleConfig();
                 
                 google.accounts.id.initialize({
@@ -287,9 +299,31 @@
             return JSON.parse(jsonPayload);
         }
 
+        // Verificar carga de config.js
+        function checkConfigLoading() {
+            const configStatus = document.createElement('div');
+            configStatus.id = 'configLoadingStatus';
+            configStatus.className = 'status info';
+            configStatus.textContent = 'Verificando carga de config.js...';
+            document.getElementById('configInfo').parentNode.insertBefore(configStatus, document.getElementById('configInfo'));
+            
+            // Verificar si config.js se cargó
+            if (typeof GOOGLE_CONFIG !== 'undefined') {
+                configStatus.textContent = '✅ config.js cargado correctamente';
+                configStatus.className = 'status success';
+            } else if (typeof getGoogleConfig !== 'function') {
+                configStatus.textContent = '❌ config.js no se cargó correctamente';
+                configStatus.className = 'status error';
+            } else {
+                configStatus.textContent = '✅ getGoogleConfig disponible';
+                configStatus.className = 'status success';
+            }
+        }
+
         // Ejecutar verificaciones al cargar
         window.addEventListener('load', function() {
             checkDomainInfo();
+            checkConfigLoading();
             checkConfig();
             checkGoogleAPI();
         });
