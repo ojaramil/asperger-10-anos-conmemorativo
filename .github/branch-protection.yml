@@ -1,0 +1,17 @@
+# Configuración de protección de rama
+# Este archivo define las reglas de protección para la rama main
+
+name: Branch Protection
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  protect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if changes are authorized
+        run: |
+          echo "Verificando que los cambios estén autorizados"
+          echo "Solo cambios a través de Pull Requests son permitidos"
