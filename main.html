@@ -907,15 +907,15 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
     
     <script>
-        // Función para guardar usuario en Google Sheets - VERSIÓN ACTUALIZADA
+        // Función para guardar usuario en Google Sheets con OAuth
         function saveUserToSheets(user) {
-            console.log('🔄 VERSIÓN ACTUALIZADA - Intentando guardar usuario en Google Sheets:', user);
+            console.log('🔄 Guardando usuario en Google Sheets con OAuth:', user);
             
             // Configuración para Google Sheets
             const config = {
-                API_KEY: 'AIzaSyB4a9mcXGxsVuVNBsGHziSe70IdADylYX0',
                 SHEETS: {
                     SPREADSHEET_ID: '1S3mJLZff9lq_MEJxU3L2h4im0hNnEXcd-Dm_uw623PQ',
                     RANGE: 'Sheet1!A:D'
@@ -942,43 +942,23 @@
 
             console.log('Datos a guardar en Google Sheets:', rowData);
 
-            // Verificar si la API Key está configurada
-            if (!config.API_KEY || config.API_KEY === 'TU_API_KEY_AQUI') {
-                console.log('❌ API Key no configurada, saltando guardado en Google Sheets');
-                return;
+            // Usar Google Sheets API con OAuth
+            if (typeof gapi !== 'undefined' && gapi.client) {
+                console.log('📤 Usando OAuth para Google Sheets...');
+                
+                gapi.client.sheets.spreadsheets.values.append({
+                    spreadsheetId: config.SHEETS.SPREADSHEET_ID,
+                    range: config.SHEETS.RANGE,
+                    valueInputOption: 'RAW',
+                    values: [rowData]
+                }).then(response => {
+                    console.log('✅ Usuario guardado exitosamente en Google Sheets:', response);
+                }).catch(error => {
+                    console.error('❌ Error al guardar en Google Sheets:', error);
+                });
+            } else {
+                console.log('❌ Google API no disponible, saltando guardado');
             }
-
-            // Usar Google Sheets API con fetch
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}/values/${config.SHEETS.RANGE}:append?valueInputOption=RAW&key=${config.API_KEY}`;
-            
-            const requestBody = {
-                values: [rowData]
-            };
-
-            console.log('📤 Enviando datos a Google Sheets...');
-            console.log('URL:', url);
-            console.log('Datos:', requestBody);
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody)
-            })
-            .then(response => {
-                console.log('📥 Respuesta de Google Sheets:', response);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('✅ Usuario guardado exitosamente en Google Sheets:', data);
-            })
-            .catch(error => {
-                console.error('❌ Error al guardar en Google Sheets:', error);
-            });
         }
 
         // Función para probar Google Sheets
@@ -994,15 +974,38 @@
             saveUserToSheets(testUser);
         }
 
+        // Inicializar Google API con scopes para Sheets
+        function initializeGoogleAPI() {
+            if (typeof gapi !== 'undefined') {
+                gapi.load('client', function() {
+                    gapi.client.init({
+                        apiKey: 'AIzaSyB4a9mcXGxsVuVNBsGHziSe70IdADylYX0',
+                        clientId: '523217777262-5qqpqpurkkkede0p3i7fofmt7978hf77.apps.googleusercontent.com',
+                        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                        scope: 'https://www.googleapis.com/auth/spreadsheets'
+                    }).then(function() {
+                        console.log('✅ Google API inicializada con scopes de Sheets');
+                    }).catch(function(error) {
+                        console.error('❌ Error inicializando Google API:', error);
+                    });
+                });
+            }
+        }
+
         // Verificar si hay datos de usuario en localStorage
         window.addEventListener('load', function() {
+            // Inicializar Google API
+            initializeGoogleAPI();
+            
             const userInfo = localStorage.getItem('userInfo');
             if (userInfo) {
                 const user = JSON.parse(userInfo);
                 console.log('👤 Usuario encontrado en localStorage:', user);
                 
-                // Guardar en Google Sheets
-                saveUserToSheets(user);
+                // Esperar un poco para que Google API se inicialice
+                setTimeout(() => {
+                    saveUserToSheets(user);
+                }, 2000);
             } else {
                 console.log('ℹ️ No hay datos de usuario en localStorage');
             }
