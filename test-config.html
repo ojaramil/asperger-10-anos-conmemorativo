@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Configuración - App Conmemorativa</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Configuración - App Conmemorativa</h1>
+    
+    <div class="test-section">
+        <h2>1. Verificar Archivo de Configuración</h2>
+        <div id="configTest"></div>
+        <button onclick="testConfig()">Probar Configuración</button>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Verificar Google OAuth</h2>
+        <div id="oauthTest"></div>
+        <button onclick="testGoogleOAuth()">Probar Google OAuth</button>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Verificar Google Sheets</h2>
+        <div id="sheetsTest"></div>
+        <button onclick="testGoogleSheets()">Probar Google Sheets</button>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Verificar Dominios</h2>
+        <div id="domainTest"></div>
+        <button onclick="testDomains()">Probar Dominios</button>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Log de Pruebas</h2>
+        <div id="testLog" class="log"></div>
+        <button onclick="clearLog()">Limpiar Log</button>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let logElement = document.getElementById('testLog');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            logElement.innerHTML = '';
+        }
+
+        function testConfig() {
+            log('🔍 Probando configuración...');
+            const configDiv = document.getElementById('configTest');
+            
+            try {
+                const config = getGoogleConfig();
+                log('✅ Función getGoogleConfig() encontrada', 'success');
+                
+                // Verificar CLIENT_ID
+                if (config.CLIENT_ID && config.CLIENT_ID !== 'TU_CLIENT_ID_AQUI') {
+                    log('✅ CLIENT_ID configurado: ' + config.CLIENT_ID.substring(0, 20) + '...', 'success');
+                } else {
+                    log('❌ CLIENT_ID no configurado o es placeholder', 'error');
+                }
+                
+                // Verificar SHEETS
+                if (config.SHEETS) {
+                    if (config.SHEETS.SPREADSHEET_ID && config.SHEETS.SPREADSHEET_ID !== 'TU_SPREADSHEET_ID_AQUI') {
+                        log('✅ SPREADSHEET_ID configurado: ' + config.SHEETS.SPREADSHEET_ID.substring(0, 20) + '...', 'success');
+                    } else {
+                        log('❌ SPREADSHEET_ID no configurado o es placeholder', 'error');
+                    }
+                    
+                    if (config.SHEETS.API_KEY && config.SHEETS.API_KEY !== 'TU_API_KEY_AQUI') {
+                        log('✅ API_KEY configurado: ' + config.SHEETS.API_KEY.substring(0, 20) + '...', 'success');
+                    } else {
+                        log('❌ API_KEY no configurado o es placeholder', 'error');
+                    }
+                } else {
+                    log('❌ Configuración de SHEETS no encontrada', 'error');
+                }
+                
+                // Verificar AUTHORIZED_ORIGINS
+                if (config.AUTHORIZED_ORIGINS && config.AUTHORIZED_ORIGINS.length > 0) {
+                    log('✅ AUTHORIZED_ORIGINS configurado: ' + config.AUTHORIZED_ORIGINS.join(', '), 'success');
+                } else {
+                    log('❌ AUTHORIZED_ORIGINS no configurado', 'error');
+                }
+                
+                configDiv.innerHTML = '<p class="success">✅ Configuración cargada correctamente</p>';
+                
+            } catch (error) {
+                log('❌ Error al cargar configuración: ' + error.message, 'error');
+                configDiv.innerHTML = '<p class="error">❌ Error al cargar configuración</p>';
+            }
+        }
+
+        function testGoogleOAuth() {
+            log('🔍 Probando Google OAuth...');
+            const oauthDiv = document.getElementById('oauthTest');
+            
+            try {
+                const config = getGoogleConfig();
+                
+                if (!config.CLIENT_ID || config.CLIENT_ID === 'TU_CLIENT_ID_AQUI') {
+                    log('❌ CLIENT_ID no configurado', 'error');
+                    oauthDiv.innerHTML = '<p class="error">❌ CLIENT_ID no configurado</p>';
+                    return;
+                }
+                
+                // Verificar si Google está disponible
+                if (typeof google === 'undefined') {
+                    log('⚠️ Google API no cargada, cargando...', 'warning');
+                    loadGoogleAPI().then(() => {
+                        testGoogleOAuth();
+                    });
+                    return;
+                }
+                
+                if (google.accounts) {
+                    log('✅ Google Accounts API disponible', 'success');
+                    
+                    // Verificar configuración de OAuth
+                    const currentOrigin = window.location.origin;
+                    const isAuthorized = config.AUTHORIZED_ORIGINS.includes(currentOrigin);
+                    
+                    if (isAuthorized) {
+                        log('✅ Dominio actual autorizado: ' + currentOrigin, 'success');
+                    } else {
+                        log('⚠️ Dominio actual no autorizado: ' + currentOrigin, 'warning');
+                        log('Dominios autorizados: ' + config.AUTHORIZED_ORIGINS.join(', '), 'info');
+                    }
+                    
+                    oauthDiv.innerHTML = '<p class="success">✅ Google OAuth configurado correctamente</p>';
+                } else {
+                    log('❌ Google Accounts API no disponible', 'error');
+                    oauthDiv.innerHTML = '<p class="error">❌ Google Accounts API no disponible</p>';
+                }
+                
+            } catch (error) {
+                log('❌ Error en Google OAuth: ' + error.message, 'error');
+                oauthDiv.innerHTML = '<p class="error">❌ Error en Google OAuth</p>';
+            }
+        }
+
+        function testGoogleSheets() {
+            log('🔍 Probando Google Sheets...');
+            const sheetsDiv = document.getElementById('sheetsTest');
+            
+            try {
+                const config = getGoogleConfig();
+                
+                if (!config.SHEETS || !config.SHEETS.API_KEY || config.SHEETS.API_KEY === 'TU_API_KEY_AQUI') {
+                    log('❌ API_KEY no configurado', 'error');
+                    sheetsDiv.innerHTML = '<p class="error">❌ API_KEY no configurado</p>';
+                    return;
+                }
+                
+                if (!config.SHEETS.SPREADSHEET_ID || config.SHEETS.SPREADSHEET_ID === 'TU_SPREADSHEET_ID_AQUI') {
+                    log('❌ SPREADSHEET_ID no configurado', 'error');
+                    sheetsDiv.innerHTML = '<p class="error">❌ SPREADSHEET_ID no configurado</p>';
+                    return;
+                }
+                
+                // Probar acceso a la hoja
+                const testUrl = `https://sheets.googleapis.com/v4/spreadsheets/${config.SHEETS.SPREADSHEET_ID}?key=${config.SHEETS.API_KEY}`;
+                
+                log('📤 Probando acceso a Google Sheets...');
+                
+                fetch(testUrl)
+                    .then(response => {
+                        if (response.ok) {
+                            log('✅ Acceso a Google Sheets exitoso', 'success');
+                            return response.json();
+                        } else {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                    })
+                    .then(data => {
+                        log('✅ Hoja de cálculo encontrada: ' + data.properties.title, 'success');
+                        sheetsDiv.innerHTML = '<p class="success">✅ Google Sheets configurado correctamente</p>';
+                    })
+                    .catch(error => {
+                        log('❌ Error al acceder a Google Sheets: ' + error.message, 'error');
+                        sheetsDiv.innerHTML = '<p class="error">❌ Error al acceder a Google Sheets</p>';
+                    });
+                
+            } catch (error) {
+                log('❌ Error en Google Sheets: ' + error.message, 'error');
+                sheetsDiv.innerHTML = '<p class="error">❌ Error en Google Sheets</p>';
+            }
+        }
+
+        function testDomains() {
+            log('🔍 Probando dominios...');
+            const domainDiv = document.getElementById('domainTest');
+            
+            try {
+                const config = getGoogleConfig();
+                const currentOrigin = window.location.origin;
+                const currentHostname = window.location.hostname;
+                
+                log('Dominio actual: ' + currentOrigin, 'info');
+                log('Hostname actual: ' + currentHostname, 'info');
+                
+                const isAuthorized = config.AUTHORIZED_ORIGINS.includes(currentOrigin);
+                
+                if (isAuthorized) {
+                    log('✅ Dominio actual está autorizado', 'success');
+                    domainDiv.innerHTML = '<p class="success">✅ Dominio autorizado</p>';
+                } else {
+                    log('⚠️ Dominio actual NO está autorizado', 'warning');
+                    log('Dominios autorizados: ' + config.AUTHORIZED_ORIGINS.join(', '), 'info');
+                    domainDiv.innerHTML = '<p class="warning">⚠️ Dominio no autorizado - Agrega: ' + currentOrigin + '</p>';
+                }
+                
+            } catch (error) {
+                log('❌ Error al verificar dominios: ' + error.message, 'error');
+                domainDiv.innerHTML = '<p class="error">❌ Error al verificar dominios</p>';
+            }
+        }
+
+        function loadGoogleAPI() {
+            return new Promise((resolve, reject) => {
+                if (typeof google !== 'undefined') {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = 'https://accounts.google.com/gsi/client';
+                script.onload = () => {
+                    log('✅ Google API cargada', 'success');
+                    resolve();
+                };
+                script.onerror = () => {
+                    log('❌ Error al cargar Google API', 'error');
+                    reject();
+                };
+                document.head.appendChild(script);
+            });
+        }
+
+        // Ejecutar pruebas automáticamente al cargar
+        window.addEventListener('load', function() {
+            log('🚀 Iniciando pruebas de configuración...');
+            testConfig();
+        });
+    </script>
+</body>
+</html>

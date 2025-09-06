@@ -1,6 +1,3 @@
-# GitHub Actions para despliegue automático
-# Este archivo se ejecuta cada vez que haces push al repositorio
-
 name: Deploy to GitHub Pages
 
 on:
@@ -14,30 +11,32 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout código
+    - name: Checkout
       uses: actions/checkout@v3
       
-    - name: Configurar Node.js
+    - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
         
-    - name: Instalar dependencias (si las hay)
+    - name: Install dependencies (if any)
       run: |
         if [ -f package.json ]; then
-          npm install
+          npm ci
         fi
         
-    - name: Build (si es necesario)
+    - name: Build (if needed)
       run: |
-        if [ -f package.json ] && [ -f "npm run build" ]; then
-          npm run build
+        if [ -f package.json ] && npm run build --if-present; then
+          echo "Build completed"
+        else
+          echo "No build step needed"
         fi
         
-    - name: Desplegar a GitHub Pages
+    - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       if: github.ref == 'refs/heads/main'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./
-
+        cname: aniversario.asperger.org  # Opcional: dominio personalizado
